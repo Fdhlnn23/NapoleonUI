@@ -3029,8 +3029,21 @@ function Napoleon:Window(GuiConfig)
                     local ok = SaveProfile(name)
                     if ok then
                         notif("Profile '" .. name .. "' berhasil disimpan!", 4)
+                        task.wait(0.2) -- Beri waktu filesystem flush
                         local newList = GetProfileList()
-                        if #newList == 0 then table.insert(newList, "None") end
+                        -- Fallback: jika file belum terdeteksi, tambah manual
+                        if not table.find(newList, name) then
+                            table.insert(newList, name)
+                            table.sort(newList)
+                        end
+                        -- Hapus "None" jika ada profile asli
+                        if #newList > 1 then
+                            for i = #newList, 1, -1 do
+                                if newList[i] == "None" then
+                                    table.remove(newList, i)
+                                end
+                            end
+                        end
                         if profileDropdown and profileDropdown.SetValues then
                             profileDropdown:SetValues(newList, name)
                         end

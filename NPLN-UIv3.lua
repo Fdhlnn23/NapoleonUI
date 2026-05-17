@@ -2989,19 +2989,8 @@ function Napoleon:Window(GuiConfig)
     -- ═══════════════════════════════════════════════════
     task.defer(function()
         pcall(function()
+            -- CountTab sudah = jumlah tab user, jadi Settings otomatis dapat LayoutOrder paling tinggi
             local SettingsTab = Tabs:AddTab({ Name = "Settings", Icon = "settings" })
-
-            -- Force Settings tab to always be at the bottom
-            for _, child in ipairs(ScrollTab:GetChildren()) do
-                if child:IsA("Frame") and child.Name == "Tab" then
-                    local nameLabel = child:FindFirstChild("TabName")
-                    if nameLabel and nameLabel.Text == "Settings" then
-                        child.LayoutOrder = 9999
-                        break
-                    end
-                end
-            end
-
             local ConfigSection = SettingsTab:AddSection("Config Profile", false)
 
             local profileDropdown

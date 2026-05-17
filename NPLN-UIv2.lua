@@ -52,6 +52,78 @@ function LoadConfigElements()
     end
 end
 
+-- ============================================================
+-- CONFIG PROFILE SYSTEM
+-- ============================================================
+local PROFILE_FOLDER = "Napoleon/Profiles"
+
+local function EnsureProfileFolder()
+    pcall(function()
+        if not isfolder("Napoleon") then makefolder("Napoleon") end
+        if not isfolder("Napoleon/Config") then makefolder("Napoleon/Config") end
+        if not isfolder(PROFILE_FOLDER) then makefolder(PROFILE_FOLDER) end
+    end)
+end
+
+function GetProfileList()
+    local profiles = {}
+    pcall(function()
+        EnsureProfileFolder()
+        local files = listfiles(PROFILE_FOLDER)
+        for _, filePath in ipairs(files) do
+            local fileName = filePath:match("([^/\\]+)$")
+            if fileName and fileName:match("%.json$") then
+                table.insert(profiles, fileName:gsub("%.json$", ""))
+            end
+        end
+    end)
+    table.sort(profiles)
+    return profiles
+end
+
+function SaveProfile(name)
+    if not name or name == "" then return false end
+    EnsureProfileFolder()
+    local ok, err = pcall(function()
+        writefile(PROFILE_FOLDER .. "/" .. name .. ".json", HttpService:JSONEncode(ConfigData))
+    end)
+    return ok, err
+end
+
+function LoadProfile(name)
+    if not name or name == "" then return false end
+    local path = PROFILE_FOLDER .. "/" .. name .. ".json"
+    if not isfile or not isfile(path) then return false end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(path))
+    end)
+    if ok and type(data) == "table" then
+        for key, val in pairs(data) do
+            ConfigData[key] = val
+        end
+        for key, element in pairs(Elements) do
+            if ConfigData[key] ~= nil and element.Set then
+                pcall(function()
+                    element:Set(ConfigData[key])
+                end)
+                task.wait(0.03)
+            end
+        end
+        SaveConfig()
+        return true
+    end
+    return false
+end
+
+function DeleteProfile(name)
+    if not name or name == "" then return false end
+    local path = PROFILE_FOLDER .. "/" .. name .. ".json"
+    local ok = pcall(function()
+        if isfile(path) then delfile(path) end
+    end)
+    return ok
+end
+
 local Icons = {
     player    = "rbxassetid://12120698352",
     web       = "rbxassetid://137601480983962",
@@ -1927,14 +1999,27 @@ function Napoleon:Window(GuiConfig)
                 if ButtonConfig.SubTitle then
                     local SubButton = Instance.new("TextButton")
                     SubButton.Font = Enum.Font.GothamBold
-                    SubButton.Text = ButtonConfig.SubTitle
+                    SubButton.Text = "    " .. ButtonConfig.SubTitle
                     SubButton.TextSize = 12
                     SubButton.TextTransparency = 0.3
                     SubButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    SubButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                    SubButton.BackgroundTransparency = 0.935
+                    SubButton.BackgroundColor3 = Color3.fromRGB(46, 46, 46)
+                    SubButton.BackgroundTransparency = 0.2
                     SubButton.AutoButtonColor = false
+                    SubButton.TextXAlignment = Enum.TextXAlignment.Left
                     
+                    local SubButtonIcon = Instance.new("ImageLabel")
+                    SubButtonIcon.Name = "Icon"
+                    SubButtonIcon.Parent = SubButton
+                    SubButtonIcon.Size = UDim2.new(0, 20, 0, 20)
+                    SubButtonIcon.Position = UDim2.new(0.92, 0, 0.5, 0)
+                    SubButtonIcon.AnchorPoint = Vector2.new(0, 0.5)
+                    SubButtonIcon.BackgroundTransparency = 1
+                    SubButtonIcon.Image = "rbxassetid://90520342625816"
+                    SubButtonIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                    SubButtonIcon.ImageTransparency = 0.3
+                    SubButtonIcon.ScaleType = Enum.ScaleType.Fit
+
                     local subNormalSize = UDim2.new(0.5, -8, 1, -10)
                     local subShrinkSize = UDim2.new(subNormalSize.X.Scale, subNormalSize.X.Offset - 4, subNormalSize.Y.Scale, subNormalSize.Y.Offset - 4)
 
@@ -2898,6 +2983,109 @@ function Napoleon:Window(GuiConfig)
         _G[safeName] = Sections
         return Sections
     end
+
+    -- ═══════════════════════════════════════════════════
+    -- AUTO-CREATE SETTINGS TAB (Config Profile System)
+    -- ═══════════════════════════════════════════════════
+    task.defer(function()
+        pcall(function()
+            -- CountTab sudah = jumlah tab user, jadi Settings otomatis dapat LayoutOrder paling tinggi
+            local SettingsTab = Tabs:AddTab({ Name = "Config", Icon = "settings" })
+            local ConfigSection = SettingsTab:AddSection("Config Profile", false)
+
+            local profileDropdown
+            local selectedProfile = "None"
+            local profiles = GetProfileList()
+            if #profiles == 0 then table.insert(profiles, "None") end
+
+            profileDropdown = ConfigSection:AddDropdown({
+                Title = "Select Profile",
+                Content = "Select the saved config profile",
+                Options = profiles,
+                Default = profiles[1] or "None",
+                Multi = false,
+                Callback = function(val)
+                    selectedProfile = val
+                end
+            })
+
+            local profileNameInput = ConfigSection:AddInput({
+                Title = "Profile Name",
+                Content = "Name for new config profile",
+                Default = "",
+                Callback = function(val) end
+            })
+
+            ConfigSection:AddButton({
+                Title = "Save Profile",
+                SubTitle = "Load Profile",
+                Callback = function()
+                    local name = profileNameInput.Value
+                    if not name or name == "" or name == "None" then
+                        notif("Masukkan nama profile dulu!", 3)
+                        return
+                    end
+                    name = name:gsub("[^%w_%-]", "_")
+                    local ok = SaveProfile(name)
+                    if ok then
+                        notif("Profile '" .. name .. "' berhasil disimpan!", 4)
+                        local newList = GetProfileList()
+                        if #newList == 0 then table.insert(newList, "None") end
+                        if profileDropdown and profileDropdown.SetValues then
+                            profileDropdown:SetValues(newList, name)
+                        end
+                        selectedProfile = name
+                    else
+                        notif("Gagal menyimpan profile!", 3)
+                    end
+                end,
+                SubCallback = function()
+                    if not selectedProfile or selectedProfile == "" or selectedProfile == "None" then
+                        notif("Pilih profile dari dropdown dulu!", 3)
+                        return
+                    end
+                    notif("Loading profile '" .. selectedProfile .. "'...", 3)
+                    task.spawn(function()
+                        local ok = LoadProfile(selectedProfile)
+                        if ok then
+                            notif("Profile '" .. selectedProfile .. "' berhasil di-load!", 4)
+                        else
+                            notif("Gagal load profile!", 3)
+                        end
+                    end)
+                end
+            })
+
+            ConfigSection:AddButton({
+                Title = "Delete Config",
+                Callback = function()
+                    if not selectedProfile or selectedProfile == "" or selectedProfile == "None" then
+                        notif("Pilih profile yang ingin dihapus!", 3)
+                        return
+                    end
+                    local ok = DeleteProfile(selectedProfile)
+                    if ok then
+                        notif("Profile '" .. selectedProfile .. "' dihapus!", 3)
+                        selectedProfile = "None"
+                        local newList = GetProfileList()
+                        if #newList == 0 then table.insert(newList, "None") end
+                        if profileDropdown and profileDropdown.SetValues then
+                            profileDropdown:SetValues(newList, newList[1])
+                        end
+                    else
+                        notif("Gagal menghapus profile!", 3)
+                    end
+                end
+            })
+
+            -- ConfigSection:AddDivider()
+
+            -- ConfigSection:AddParagraph({
+            --     Title = "📌 Tips",
+            --     Content = "• Save: Simpan semua toggle, dropdown, slider, input\n• Load: Restore semua setting dari profile\n• Profile berlaku untuk semua script yang pakai Napoleon UI"
+            -- })
+        end)
+    end)
 
     return Tabs
 end

@@ -2990,6 +2990,18 @@ function Napoleon:Window(GuiConfig)
     task.defer(function()
         pcall(function()
             local SettingsTab = Tabs:AddTab({ Name = "Settings", Icon = "settings" })
+
+            -- Force Settings tab to always be at the bottom
+            for _, child in ipairs(ScrollTab:GetChildren()) do
+                if child:IsA("Frame") and child.Name == "Tab" then
+                    local nameLabel = child:FindFirstChild("TabName")
+                    if nameLabel and nameLabel.Text == "Settings" then
+                        child.LayoutOrder = 9999
+                        break
+                    end
+                end
+            end
+
             local ConfigSection = SettingsTab:AddSection("Config Profile", false)
 
             local profileDropdown
@@ -3082,12 +3094,12 @@ function Napoleon:Window(GuiConfig)
                 end
             })
 
-            ConfigSection:AddDivider()
+            -- ConfigSection:AddDivider()
 
-            ConfigSection:AddParagraph({
-                Title = "📌 Tips",
-                Content = "• Save: Simpan semua toggle, dropdown, slider, input\n• Load: Restore semua setting dari profile\n• Profile berlaku untuk semua script yang pakai Napoleon UI"
-            })
+            -- ConfigSection:AddParagraph({
+            --     Title = "📌 Tips",
+            --     Content = "• Save: Simpan semua toggle, dropdown, slider, input\n• Load: Restore semua setting dari profile\n• Profile berlaku untuk semua script yang pakai Napoleon UI"
+            -- })
         end)
     end)
 

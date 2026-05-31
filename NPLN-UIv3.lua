@@ -2987,110 +2987,110 @@ function Napoleon:Window(GuiConfig)
     -- ═══════════════════════════════════════════════════
     -- AUTO-CREATE SETTINGS TAB (Config Profile System)
     -- ═══════════════════════════════════════════════════
-    task.defer(function()
-        pcall(function()
-            -- CountTab sudah = jumlah tab user, jadi Settings otomatis dapat LayoutOrder paling tinggi
-            local SettingsTab = Tabs:AddTab({ Name = "Settings", Icon = "settings" })
-            local ConfigSection = SettingsTab:AddSection("Config Profile", false)
+    -- task.defer(function()
+    --     pcall(function()
+    --         -- CountTab sudah = jumlah tab user, jadi Settings otomatis dapat LayoutOrder paling tinggi
+    --         local SettingsTab = Tabs:AddTab({ Name = "Settings", Icon = "settings" })
+    --         local ConfigSection = SettingsTab:AddSection("Config Profile", false)
 
-            local profileDropdown
-            local selectedProfile = "None"
-            local profiles = GetProfileList()
-            if #profiles == 0 then table.insert(profiles, "None") end
+    --         local profileDropdown
+    --         local selectedProfile = "None"
+    --         local profiles = GetProfileList()
+    --         if #profiles == 0 then table.insert(profiles, "None") end
 
-            ConfigSection:AddParagraph({
-                Title = "Config Profile",
-                Content = "Save/Load semua setting (toggle, dropdown, slider, input) ke profile.\nProfile disimpan di: Napoleon/Profiles/"
-            })
+    --         ConfigSection:AddParagraph({
+    --             Title = "Config Profile",
+    --             Content = "Save/Load semua setting (toggle, dropdown, slider, input) ke profile.\nProfile disimpan di: Napoleon/Profiles/"
+    --         })
 
-            profileDropdown = ConfigSection:AddDropdown({
-                Title = "Select Profile",
-                Content = "Pilih config profile yang tersimpan",
-                Options = profiles,
-                Default = profiles[1] or "None",
-                Multi = false,
-                Callback = function(val)
-                    selectedProfile = val
-                end
-            })
+    --         profileDropdown = ConfigSection:AddDropdown({
+    --             Title = "Select Profile",
+    --             Content = "Pilih config profile yang tersimpan",
+    --             Options = profiles,
+    --             Default = profiles[1] or "None",
+    --             Multi = false,
+    --             Callback = function(val)
+    --                 selectedProfile = val
+    --             end
+    --         })
 
-            local profileNameInput = ConfigSection:AddInput({
-                Title = "Profile Name",
-                Content = "Nama untuk config profile baru",
-                Default = "",
-                Callback = function(val) end
-            })
+    --         local profileNameInput = ConfigSection:AddInput({
+    --             Title = "Profile Name",
+    --             Content = "Nama untuk config profile baru",
+    --             Default = "",
+    --             Callback = function(val) end
+    --         })
 
-            ConfigSection:AddButton({
-                Title = "Save Profile",
-                SubTitle = "Load Profile",
-                Callback = function()
-                    local name = profileNameInput.Value
-                    if not name or name == "" or name == "None" then
-                        notif("Masukkan nama profile dulu!", 3)
-                        return
-                    end
-                    name = name:gsub("[^%w_%-]", "_")
-                    local ok = SaveProfile(name)
-                    if ok then
-                        notif("Profile '" .. name .. "' berhasil disimpan!", 4)
-                        local newList = GetProfileList()
-                        if #newList == 0 then table.insert(newList, "None") end
-                        if profileDropdown and profileDropdown.SetValues then
-                            profileDropdown:SetValues(newList, name)
-                        end
-                        selectedProfile = name
-                    else
-                        notif("Gagal menyimpan profile!", 3)
-                    end
-                end,
-                SubCallback = function()
-                    if not selectedProfile or selectedProfile == "" or selectedProfile == "None" then
-                        notif("Pilih profile dari dropdown dulu!", 3)
-                        return
-                    end
-                    notif("Loading profile '" .. selectedProfile .. "'...", 3)
-                    task.spawn(function()
-                        local ok = LoadProfile(selectedProfile)
-                        if ok then
-                            notif("Profile '" .. selectedProfile .. "' berhasil di-load!", 4)
-                        else
-                            notif("Gagal load profile!", 3)
-                        end
-                    end)
-                end
-            })
+    --         ConfigSection:AddButton({
+    --             Title = "Save Profile",
+    --             SubTitle = "Load Profile",
+    --             Callback = function()
+    --                 local name = profileNameInput.Value
+    --                 if not name or name == "" or name == "None" then
+    --                     notif("Masukkan nama profile dulu!", 3)
+    --                     return
+    --                 end
+    --                 name = name:gsub("[^%w_%-]", "_")
+    --                 local ok = SaveProfile(name)
+    --                 if ok then
+    --                     notif("Profile '" .. name .. "' berhasil disimpan!", 4)
+    --                     local newList = GetProfileList()
+    --                     if #newList == 0 then table.insert(newList, "None") end
+    --                     if profileDropdown and profileDropdown.SetValues then
+    --                         profileDropdown:SetValues(newList, name)
+    --                     end
+    --                     selectedProfile = name
+    --                 else
+    --                     notif("Gagal menyimpan profile!", 3)
+    --                 end
+    --             end,
+    --             SubCallback = function()
+    --                 if not selectedProfile or selectedProfile == "" or selectedProfile == "None" then
+    --                     notif("Pilih profile dari dropdown dulu!", 3)
+    --                     return
+    --                 end
+    --                 notif("Loading profile '" .. selectedProfile .. "'...", 3)
+    --                 task.spawn(function()
+    --                     local ok = LoadProfile(selectedProfile)
+    --                     if ok then
+    --                         notif("Profile '" .. selectedProfile .. "' berhasil di-load!", 4)
+    --                     else
+    --                         notif("Gagal load profile!", 3)
+    --                     end
+    --                 end)
+    --             end
+    --         })
 
-            ConfigSection:AddButton({
-                Title = "Delete Config",
-                Callback = function()
-                    if not selectedProfile or selectedProfile == "" or selectedProfile == "None" then
-                        notif("Pilih profile yang ingin dihapus!", 3)
-                        return
-                    end
-                    local ok = DeleteProfile(selectedProfile)
-                    if ok then
-                        notif("Profile '" .. selectedProfile .. "' dihapus!", 3)
-                        selectedProfile = "None"
-                        local newList = GetProfileList()
-                        if #newList == 0 then table.insert(newList, "None") end
-                        if profileDropdown and profileDropdown.SetValues then
-                            profileDropdown:SetValues(newList, newList[1])
-                        end
-                    else
-                        notif("Gagal menghapus profile!", 3)
-                    end
-                end
-            })
+    --         ConfigSection:AddButton({
+    --             Title = "Delete Config",
+    --             Callback = function()
+    --                 if not selectedProfile or selectedProfile == "" or selectedProfile == "None" then
+    --                     notif("Pilih profile yang ingin dihapus!", 3)
+    --                     return
+    --                 end
+    --                 local ok = DeleteProfile(selectedProfile)
+    --                 if ok then
+    --                     notif("Profile '" .. selectedProfile .. "' dihapus!", 3)
+    --                     selectedProfile = "None"
+    --                     local newList = GetProfileList()
+    --                     if #newList == 0 then table.insert(newList, "None") end
+    --                     if profileDropdown and profileDropdown.SetValues then
+    --                         profileDropdown:SetValues(newList, newList[1])
+    --                     end
+    --                 else
+    --                     notif("Gagal menghapus profile!", 3)
+    --                 end
+    --             end
+    --         })
 
-            -- ConfigSection:AddDivider()
+    --         -- ConfigSection:AddDivider()
 
-            -- ConfigSection:AddParagraph({
-            --     Title = "📌 Tips",
-            --     Content = "• Save: Simpan semua toggle, dropdown, slider, input\n• Load: Restore semua setting dari profile\n• Profile berlaku untuk semua script yang pakai Napoleon UI"
-            -- })
-        end)
-    end)
+    --         -- ConfigSection:AddParagraph({
+    --         --     Title = "📌 Tips",
+    --         --     Content = "• Save: Simpan semua toggle, dropdown, slider, input\n• Load: Restore semua setting dari profile\n• Profile berlaku untuk semua script yang pakai Napoleon UI"
+    --         -- })
+    --     end)
+    -- end)
 
     return Tabs
 end

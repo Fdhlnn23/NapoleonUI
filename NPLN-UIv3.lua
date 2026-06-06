@@ -2441,11 +2441,11 @@ function Napoleon:Window(GuiConfig)
                 end)
 
                 TextBox:GetPropertyChangedSignal("Text"):Connect(function()
-                    local Valid = TextBox.Text:gsub("[^%d]", "")
-                    if Valid ~= "" then
+                    local Valid = TextBox.Text:gsub("[^%d%.]", "")
+                    if Valid ~= "" and tonumber(Valid) then
                         local ValidNumber = math.clamp(tonumber(Valid), SliderConfig.Min, SliderConfig.Max)
                         SliderFunc:Set(ValidNumber)
-                    else
+                    elseif Valid == "" then
                         SliderFunc:Set(SliderConfig.Min)
                     end
                 end)
@@ -2990,7 +2990,7 @@ function Napoleon:Window(GuiConfig)
     -- task.defer(function()
     --     pcall(function()
     --         -- CountTab sudah = jumlah tab user, jadi Settings otomatis dapat LayoutOrder paling tinggi
-    --         local SettingsTab = Tabs:AddTab({ Name = "Settings", Icon = "settings" })
+    --         local SettingsTab = Tabs:AddTab({ Name = "Config", Icon = "settings" })
     --         local ConfigSection = SettingsTab:AddSection("Config Profile", false)
 
     --         local profileDropdown
@@ -2998,14 +2998,9 @@ function Napoleon:Window(GuiConfig)
     --         local profiles = GetProfileList()
     --         if #profiles == 0 then table.insert(profiles, "None") end
 
-    --         ConfigSection:AddParagraph({
-    --             Title = "Config Profile",
-    --             Content = "Save/Load semua setting (toggle, dropdown, slider, input) ke profile.\nProfile disimpan di: Napoleon/Profiles/"
-    --         })
-
     --         profileDropdown = ConfigSection:AddDropdown({
     --             Title = "Select Profile",
-    --             Content = "Pilih config profile yang tersimpan",
+    --             Content = "Select the saved config profile",
     --             Options = profiles,
     --             Default = profiles[1] or "None",
     --             Multi = false,
@@ -3016,7 +3011,7 @@ function Napoleon:Window(GuiConfig)
 
     --         local profileNameInput = ConfigSection:AddInput({
     --             Title = "Profile Name",
-    --             Content = "Nama untuk config profile baru",
+    --             Content = "Name for new config profile",
     --             Default = "",
     --             Callback = function(val) end
     --         })
@@ -3034,8 +3029,21 @@ function Napoleon:Window(GuiConfig)
     --                 local ok = SaveProfile(name)
     --                 if ok then
     --                     notif("Profile '" .. name .. "' berhasil disimpan!", 4)
+    --                     task.wait(0.2) -- Beri waktu filesystem flush
     --                     local newList = GetProfileList()
-    --                     if #newList == 0 then table.insert(newList, "None") end
+    --                     -- Fallback: jika file belum terdeteksi, tambah manual
+    --                     if not table.find(newList, name) then
+    --                         table.insert(newList, name)
+    --                         table.sort(newList)
+    --                     end
+    --                     -- Hapus "None" jika ada profile asli
+    --                     if #newList > 1 then
+    --                         for i = #newList, 1, -1 do
+    --                             if newList[i] == "None" then
+    --                                 table.remove(newList, i)
+    --                             end
+    --                         end
+    --                     end
     --                     if profileDropdown and profileDropdown.SetValues then
     --                         profileDropdown:SetValues(newList, name)
     --                     end

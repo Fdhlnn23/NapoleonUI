@@ -162,6 +162,7 @@ local Icons = {
     fish      = "rbxassetid://97167558235554",
     enviicon  = "rbxassetid://101669656973003",
     nplnicon  = "rbxassetid://111895858615511",
+    nplnv4    = "rbxassetid://76157300179532",
 }
 
 local UserInputService = game:GetService("UserInputService")
@@ -685,7 +686,7 @@ function Napoleon:Window(GuiConfig)
     TextLabel.Parent = Top
 
     local LogoImg = Instance.new("ImageLabel")
-	LogoImg.Image = "rbxassetid://136289055140268"
+	LogoImg.Image = "rbxassetid://" .. GuiConfig.LogoHUB
 	LogoImg.BackgroundTransparency = 1
 	LogoImg.BorderSizePixel = 0
 	LogoImg.Size = UDim2.new(0, 22, 0, 22)
@@ -3440,9 +3441,9 @@ end
 --     Color    = Color3.fromRGB(81, 66, 255),
 --     Color2   = Color3.fromRGB(0, 0, 14),
 --     ["Tab Width"] = 130,
---     Image      = "111895858615511",
+--     Image      = "76157300179532",
 --     WindowIMG  = "91334002283698",
---     LogoHUB    = "136289055140268"
+--     LogoHUB    = "122210019620425"
 -- })
 -- local Tabs = Window
 
@@ -3455,7 +3456,7 @@ end
 
 --     local DiscordParagraph = InfoSection:AddParagraph({
 --         Title          = "Loading...",
---         Icon           = "nplnicon",
+--         Icon           = "nplnv4",
 --         Content        = "Members: Loading... | Online: Loading...",
 --         ButtonText     = "Copy Link",
 --         ButtonCallback = function()

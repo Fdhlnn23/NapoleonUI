@@ -3459,4 +3459,4 @@ end
 -- -- Panggil fungsi untuk menambahkan tab config di urutan paling akhir
 -- Tabs:AddConfigTab()
 
--- return Napoleon
+return Napoleon

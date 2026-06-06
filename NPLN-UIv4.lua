@@ -696,18 +696,87 @@ function Napoleon:Window(GuiConfig)
 
     UICorner1.Parent = Top
 
+    local RightContainer = Instance.new("Frame")
+    RightContainer.Name = "RightContainer"
+    RightContainer.BackgroundTransparency = 1
+    RightContainer.Size = UDim2.new(0.6, 0, 1, 0)
+    RightContainer.Position = UDim2.new(1, -110, 0, 0)
+    RightContainer.AnchorPoint = Vector2.new(1, 0)
+    RightContainer.Parent = Top
+
+    local TopListLayout = Instance.new("UIListLayout")
+    TopListLayout.FillDirection = Enum.FillDirection.Horizontal
+    TopListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    TopListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    TopListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TopListLayout.Padding = UDim.new(0, 8)
+    TopListLayout.Parent = RightContainer
+
+    local FooterFrame = Instance.new("Frame")
+    FooterFrame.Name = "FooterFrame"
+    FooterFrame.LayoutOrder = 1
+    FooterFrame.Size = UDim2.new(0, 0, 0.6, 0)
+    FooterFrame.BackgroundColor3 = GuiConfig.Color
+    FooterFrame.BackgroundTransparency = 0
+    FooterFrame.BorderSizePixel = 0
+    FooterFrame.AutomaticSize = Enum.AutomaticSize.X
+    FooterFrame.Parent = RightContainer
+
+    local FooterPadding = Instance.new("UIPadding")
+    FooterPadding.PaddingLeft = UDim.new(0, 10)
+    FooterPadding.PaddingRight = UDim.new(0, 10)
+    FooterPadding.Parent = FooterFrame
+
+    local FooterCorner = Instance.new("UICorner")
+    FooterCorner.CornerRadius = UDim.new(1, 0)
+    FooterCorner.Parent = FooterFrame
+
+    TextLabel1.Name = "FooterText"
+    TextLabel1.Size = UDim2.new(0, 0, 1, 0)
+    TextLabel1.Position = UDim2.new(0, 0, 0, 0)
+    TextLabel1.BackgroundTransparency = 1
     TextLabel1.Font = Enum.Font.GothamBold
-    TextLabel1.Text = "| " .. GuiConfig.Footer
-    TextLabel1.TextColor3 = GuiConfig.Color
-    TextLabel1.TextSize = 14
-    TextLabel1.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    TextLabel1.BackgroundTransparency = 0.9990000128746033
-    TextLabel1.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    TextLabel1.BorderSizePixel = 0
-    TextLabel1.Size = UDim2.new(1, -(TextLabel.TextBounds.X + 104), 1, 0)
-    TextLabel1.Position = UDim2.new(0, TextLabel.TextBounds.X + 40, 0, 0)
-    TextLabel1.Parent = Top
+    TextLabel1.Text = GuiConfig.Footer
+    TextLabel1.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel1.TextSize = 12
+    TextLabel1.TextXAlignment = Enum.TextXAlignment.Center
+    TextLabel1.AutomaticSize = Enum.AutomaticSize.X
+    TextLabel1.Parent = FooterFrame
+
+    local execName = (identifyexecutor and identifyexecutor()) or "Unknown"
+    local execText = "Executor: " .. tostring(execName)
+
+    local Executor = Instance.new("Frame")
+    Executor.Name = "Executor"
+    Executor.LayoutOrder = 2
+    Executor.Size = UDim2.new(0, 0, 0.6, 0)
+    Executor.BackgroundColor3 = GuiConfig.Color
+    Executor.BackgroundTransparency = 0
+    Executor.BorderSizePixel = 0
+    Executor.AutomaticSize = Enum.AutomaticSize.X
+    Executor.Parent = RightContainer
+
+    local UIPadding = Instance.new("UIPadding")
+    UIPadding.PaddingLeft = UDim.new(0, 10)
+    UIPadding.PaddingRight = UDim.new(0, 10)
+    UIPadding.Parent = Executor
+
+    local ExecutorUICorner = Instance.new("UICorner")
+    ExecutorUICorner.CornerRadius = UDim.new(1, 0)
+    ExecutorUICorner.Parent = Executor
+
+    local ExecutorTextLabel = Instance.new("TextLabel")
+    ExecutorTextLabel.Name = "TextLabel"
+    ExecutorTextLabel.Size = UDim2.new(0, 0, 1, 0)
+    ExecutorTextLabel.Position = UDim2.new(0, 0, 0, 0)
+    ExecutorTextLabel.BackgroundTransparency = 1
+    ExecutorTextLabel.Font = Enum.Font.GothamBold
+    ExecutorTextLabel.Text = execText
+    ExecutorTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ExecutorTextLabel.TextSize = 12
+    ExecutorTextLabel.TextXAlignment = Enum.TextXAlignment.Center
+    ExecutorTextLabel.AutomaticSize = Enum.AutomaticSize.X
+    ExecutorTextLabel.Parent = Executor
 
     Close.Font = Enum.Font.SourceSans
     Close.Text = ""
@@ -3232,10 +3301,11 @@ function Napoleon:Window(GuiConfig)
     -- Kumpulkan referensi elemen warna yang bisa diubah secara dinamis
     local _themeColorElements = {
         titleLabel  = TextLabel,
-        footerLabel = TextLabel1,
+        footerFrm   = FooterFrame,
         mainStroke  = MainStroke,
         decideFrm   = DecideFrame,
         mainBG      = Main,
+        executorFrm = Executor,
     }
     local _themeTabChooseFrames = {} -- referensi semua ChooseFrame tab
 
@@ -3245,7 +3315,12 @@ function Napoleon:Window(GuiConfig)
 
         -- Update topbar (Title & Footer text)
         TweenService:Create(_themeColorElements.titleLabel, TweenInfo.new(0.4), { TextColor3 = newColor }):Play()
-        TweenService:Create(_themeColorElements.footerLabel, TweenInfo.new(0.4), { TextColor3 = newColor }):Play()
+        if _themeColorElements.footerFrm then
+            TweenService:Create(_themeColorElements.footerFrm, TweenInfo.new(0.4), { BackgroundColor3 = newColor }):Play()
+        end
+        if _themeColorElements.executorFrm then
+            TweenService:Create(_themeColorElements.executorFrm, TweenInfo.new(0.4), { BackgroundColor3 = newColor }):Play()
+        end
 
         -- Update border stroke & DecideFrame
         TweenService:Create(_themeColorElements.mainStroke, TweenInfo.new(0.4), { Color = newColor }):Play()
@@ -3418,39 +3493,102 @@ end
 
 -- local function LoadMainTab()
 --     local MainTab = Tabs:AddTab({ Name = "Main", Icon = "home" })
---     local HelperSection = MainTab:AddSection("Helper Support")
+    
+--     local DemoSection = MainTab:AddSection("Elements Showcase")
 
---     HelperSection:AddToggle({ Title = "Show Real Ping", Default = false, Callback = function(value) end })
---     HelperSection:AddToggle({ Title = "Enable Fish Notification", Default = false, Callback = function(value) end })
---     HelperSection:AddToggle({ Title = "Auto Equip Rod", Default = false, Callback = function(value) end })
---     HelperSection:AddToggle({ Title = "Auto Equip Best Rod", Default = false, Callback = function(value) end })
---     HelperSection:AddToggle({ Title = "Anti Staff", Default = false, Callback = function(value) end })
---     HelperSection:AddToggle({ Title = "Bypass Radar", Default = false, Callback = function(value) end })
---     HelperSection:AddToggle({ Title = "Disable Animations", Default = false, Callback = function(value) end })
---     HelperSection:AddToggle({ Title = "Disable Obtained Fish", Default = false, Callback = function(value) end })
-
---     local FishingSection = MainTab:AddSection("Fishing Features")
-
---     FishingSection:AddSubSection("Super Fast Catch")
-
---     FishingSection:AddToggle({ Title = "Auto Fish", Default = false, Callback = function(value) end })
---     FishingSection:AddToggle({ Title = "Auto Cast", Default = false, Callback = function(value) end })
---     FishingSection:AddToggle({ Title = "Auto Shake", Default = false, Callback = function(value) end })
---     FishingSection:AddToggle({ Title = "Auto Reel", Default = false, Callback = function(value) end })
---     FishingSection:AddToggle({ Title = "Instant Bobber", Default = false, Callback = function(value) end })
-
---     FishingSection:AddSubSection("Minigame Spoofer")
-
---     FishingSection:AddSlider({
---         Title     = "Control Bar",
---         Increment = 0.01,
---         Min       = 0.05,
---         Max       = 1,
---         Default   = 0.05,
---         Callback  = function(value) end
+--     DemoSection:AddParagraph({
+--         Title          = "Paragraph Demo",
+--         Content        = "This is a paragraph example.\nYou can write multiline descriptions here.",
+--         ButtonText     = "Click Me",
+--         ButtonCallback = function()
+--             notif("Paragraph button clicked!", 2)
+--         end
 --     })
 
---     FishingSection:AddToggle({ Title = "Control Bar Changer", Default = false, Callback = function(value) end })
+--     DemoSection:AddButton({
+--         Title = "Normal Button",
+--         Callback = function()
+--             notif("Normal button clicked!", 2)
+--         end
+--     })
+
+--     DemoSection:AddButton({
+--         Title       = "Dual Button",
+--         SubTitle    = "Second Button",
+--         Callback    = function()
+--             notif("Main button clicked!", 2)
+--         end,
+--         SubCallback = function()
+--             notif("Sub button clicked!", 2)
+--         end
+--     })
+
+--     DemoSection:AddDivider()
+
+--     DemoSection:AddSubSection("Toggles & Sliders")
+
+--     DemoSection:AddToggle({
+--         Title    = "Example Toggle",
+--         Default  = false,
+--         Callback = function(value)
+--             notif("Toggle is now: " .. tostring(value), 2)
+--         end
+--     })
+
+--     DemoSection:AddSlider({
+--         Title     = "Example Slider",
+--         Increment = 1,
+--         Min       = 1,
+--         Max       = 100,
+--         Default   = 50,
+--         Callback  = function(value)
+--             -- notif("Slider value: " .. tostring(value), 2)
+--         end
+--     })
+
+--     DemoSection:AddDivider()
+
+--     DemoSection:AddSubSection("Inputs & Dropdowns")
+
+--     DemoSection:AddInput({
+--         Title    = "Example Input",
+--         Content  = "Type something and press enter",
+--         Default  = "",
+--         Callback = function(val)
+--             notif("Input submitted: " .. tostring(val), 2)
+--         end
+--     })
+
+--     DemoSection:AddPanel({
+--         Title       = "Example Panel",
+--         Placeholder = "Enter text here...",
+--         ButtonText  = "Submit Panel",
+--         Callback    = function(val)
+--             notif("Panel submitted: " .. tostring(val), 2)
+--         end
+--     })
+
+--     DemoSection:AddDropdown({
+--         Title    = "Single Dropdown",
+--         Content  = "Select one option",
+--         Options  = { "Option 1", "Option 2", "Option 3" },
+--         Default  = "Option 1",
+--         Multi    = false,
+--         Callback = function(val)
+--             notif("Selected: " .. tostring(val), 2)
+--         end
+--     })
+
+--     DemoSection:AddDropdown({
+--         Title    = "Multi Dropdown",
+--         Content  = "Select multiple options",
+--         Options  = { "Apple", "Banana", "Orange" },
+--         Default  = {"Apple"},
+--         Multi    = true,
+--         Callback = function(val)
+--             -- val is a table of selected items
+--         end
+--     })
 -- end
 
 -- LoadInfoTab()

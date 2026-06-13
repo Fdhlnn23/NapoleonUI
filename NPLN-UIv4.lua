@@ -245,7 +245,7 @@ local function MakeDraggable(topbarobject, object)
             defSizeX, defSizeY = 470, 270
         else
             minSizeX, minSizeY = 100, 100
-            defSizeX, defSizeY = 640, 400
+            defSizeX, defSizeY = 586, 364
         end
 
         object.Size = UDim2.new(0, defSizeX, 0, defSizeY)
@@ -611,16 +611,15 @@ function Napoleon:Window(GuiConfig)
     DropShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
     DropShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
     if isMobile then
-        DropShadowHolder.Size = safeSize(470, 270)
+        DropShadowHolder.Size = UDim2.new(0, 470, 0, 270)
     else
-        DropShadowHolder.Size = safeSize(640, 400)
+        DropShadowHolder.Size = UDim2.new(0, 586, 0, 364)
     end
     DropShadowHolder.ZIndex = 0
     DropShadowHolder.Name = "DropShadowHolder"
     DropShadowHolder.Parent = NapoleonOnTop
 
-    DropShadowHolder.Position = UDim2.new(0, (NapoleonOnTop.AbsoluteSize.X // 2 - DropShadowHolder.Size.X.Offset // 2), 0,
-        (NapoleonOnTop.AbsoluteSize.Y // 2 - DropShadowHolder.Size.Y.Offset // 2))
+    DropShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
     DropShadow.Image = "rbxassetid://6015897843"
     DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
     DropShadow.ImageTransparency = 1
@@ -862,6 +861,49 @@ function Napoleon:Window(GuiConfig)
     LayersTab.Name = "LayersTab"
     LayersTab.Parent = Main
 
+    local SearchBarFrame = Instance.new("Frame")
+    SearchBarFrame.Name = "SearchBarFrame"
+    SearchBarFrame.Size = UDim2.new(1, 0, 0, 26)
+    SearchBarFrame.Position = UDim2.new(0, 0, 0, 0)
+    SearchBarFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBarFrame.BackgroundTransparency = 0.93
+    SearchBarFrame.Parent = LayersTab
+
+    local SearchBarCorner = Instance.new("UICorner")
+    SearchBarCorner.CornerRadius = UDim.new(0, 6)
+    SearchBarCorner.Parent = SearchBarFrame
+
+    local SearchBarStroke = Instance.new("UIStroke")
+    SearchBarStroke.Thickness = 1
+    SearchBarStroke.Transparency = 0.7
+    SearchBarStroke.Color = GuiConfig.Color
+    SearchBarStroke.Parent = SearchBarFrame
+
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Name = "SearchBox"
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.Size = UDim2.new(1, -30, 1, 0)
+    SearchBox.Position = UDim2.new(0, 24, 0, 0)
+    SearchBox.TextSize = 11
+    SearchBox.Font = Enum.Font.Gotham
+    SearchBox.Text = ""
+    SearchBox.PlaceholderText = "Search..."
+    SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    SearchBox.Parent = SearchBarFrame
+
+    local SearchIcon = Instance.new("ImageLabel")
+    SearchIcon.Name = "SearchIcon"
+    SearchIcon.BackgroundTransparency = 1
+    SearchIcon.Image = "rbxassetid://109869955247116"
+    SearchIcon.AnchorPoint = Vector2.new(0, 0.5)
+    SearchIcon.Position = UDim2.new(0, 7, 0.5, 0)
+    SearchIcon.Size = UDim2.new(0, 13, 0, 13)
+    SearchIcon.Parent = SearchBarFrame
+
+
+
 	AccountTab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     AccountTab.BackgroundTransparency = 0.9350000023841858
     AccountTab.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -1025,7 +1067,8 @@ function Napoleon:Window(GuiConfig)
     ScrollTab.BackgroundTransparency = 0.9990000128746033
     ScrollTab.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ScrollTab.BorderSizePixel = 0
-    ScrollTab.Size = UDim2.new(1, 0, 1, 0)
+    ScrollTab.Size = UDim2.new(1, 0, 0.88, 0)
+	ScrollTab.Position = UDim2.new(0, 0, 0.11, 0)
     ScrollTab.Name = "ScrollTab"
     ScrollTab.Parent = LayersTab
 
@@ -1044,6 +1087,56 @@ function Napoleon:Window(GuiConfig)
     end
     ScrollTab.ChildAdded:Connect(UpdateSize1)
     ScrollTab.ChildRemoved:Connect(UpdateSize1)
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local query = string.lower(SearchBox.Text)
+        local jumpedToTab = false
+        for _, scrolLayers in pairs(LayersFolder:GetChildren()) do
+            if scrolLayers:IsA("ScrollingFrame") and scrolLayers.Name == "ScrolLayers" then
+                for _, section in pairs(scrolLayers:GetChildren()) do
+                    if section.Name == "Section" then
+                        local sectionAdd = section:FindFirstChild("SectionAdd")
+                        local sectionReal = section:FindFirstChild("SectionReal")
+                        if sectionAdd and sectionReal then
+                            local sectionVisible = false
+                            for _, item in pairs(sectionAdd:GetChildren()) do
+                                if item.Name ~= "UIListLayout" and item.Name ~= "UICorner" then
+                                    local match = false
+                                    for _, desc in pairs(item:GetDescendants()) do
+                                        if desc:IsA("TextLabel") and (string.find(desc.Name, "Title") or string.find(desc.Name, "Text")) then
+                                            local txt = string.lower(desc.Text)
+                                            if string.find(txt, query) then
+                                                match = true
+                                                if query ~= "" and not jumpedToTab then
+                                                    jumpedToTab = true
+                                                    for _, sideTab in pairs(ScrollTab:GetChildren()) do
+                                                        if sideTab.Name == "Tab" and sideTab.LayoutOrder == scrolLayers.LayoutOrder then
+                                                            local selectEvt = sideTab:FindFirstChild("SelectEvent")
+                                                            if selectEvt then selectEvt:Fire() end
+                                                            break
+                                                        end
+                                                    end
+                                                end
+                                                break
+                                            end
+                                        end
+                                    end
+                                    if query == "" then match = true end
+                                    item.Visible = match
+                                    if match then sectionVisible = true end
+                                end
+                            end
+                            if query ~= "" then
+                                section.Visible = sectionVisible
+                            else
+                                section.Visible = true
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
 
     function GuiFunc:DestroyGui()
         if CoreGui:FindFirstChild("NapoleonOnTop") then
@@ -1154,8 +1247,8 @@ function Napoleon:Window(GuiConfig)
 
         Yes.MouseButton1Click:Connect(function()
             if NapoleonOnTop then NapoleonOnTop:Destroy() end
-            if game.CoreGui:FindFirstChild("ToggleUIButton") then
-                game.CoreGui.ToggleUIButton:Destroy()
+            if game.CoreGui:FindFirstChild("ToggleUINapoleon") then
+                game.CoreGui.ToggleUINapoleon:Destroy()
             end
         end)
 
@@ -1178,12 +1271,12 @@ function Napoleon:Window(GuiConfig)
         local ScreenGui = Instance.new("ScreenGui")
         ScreenGui.Parent = game:GetService("CoreGui")
         ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        ScreenGui.Name = "ToggleUIButton"
+        ScreenGui.Name = "ToggleUINapoleon"
 
         local MainButton = Instance.new("ImageLabel")
         MainButton.Parent = ScreenGui
         MainButton.Size = UDim2.new(0, 40, 0, 40)
-        MainButton.Position = UDim2.new(0, 20, 0, 100)
+        MainButton.Position = UDim2.new(0, 20, 0, 150)
         MainButton.BackgroundTransparency = 1
         MainButton.Image = "rbxassetid://" .. GuiConfig.Image
         MainButton.ScaleType = Enum.ScaleType.Fit
@@ -1478,8 +1571,16 @@ function Napoleon:Window(GuiConfig)
             UICorner4.Parent = ChooseFrame
         end
 
+        local SelectEvent = Instance.new("BindableEvent")
+        SelectEvent.Name = "SelectEvent"
+        SelectEvent.Parent = Tab
+
         TabButton.Activated:Connect(function()
             CircleClick(TabButton, Mouse.X, Mouse.Y)
+            SelectEvent:Fire()
+        end)
+
+        SelectEvent.Event:Connect(function()
             local FrameChoose
             for a, s in ScrollTab:GetChildren() do
                 for i, v in s:GetChildren() do
@@ -1657,7 +1758,7 @@ function Napoleon:Window(GuiConfig)
                 if OpenSection then
                     local SectionSizeYWitdh = 38
                     for _, v in SectionAdd:GetChildren() do
-                        if v.Name ~= "UIListLayout" and v.Name ~= "UICorner" then
+                        if v.Name ~= "UIListLayout" and v.Name ~= "UICorner" and v.Visible then
                             SectionSizeYWitdh = SectionSizeYWitdh + v.Size.Y.Offset + 3
                         end
                     end
@@ -1705,7 +1806,7 @@ function Napoleon:Window(GuiConfig)
                 OpenSection = true
                 local SectionSizeYWitdh = 38
                 for _, v in SectionAdd:GetChildren() do
-                    if v.Name ~= "UIListLayout" and v.Name ~= "UICorner" then
+                    if v.Name ~= "UIListLayout" and v.Name ~= "UICorner" and v.Visible then
                         SectionSizeYWitdh = SectionSizeYWitdh + v.Size.Y.Offset + 3
                     end
                 end
@@ -1716,7 +1817,12 @@ function Napoleon:Window(GuiConfig)
                 UpdateSizeScroll()
             end
 
-            SectionAdd.ChildAdded:Connect(UpdateSizeSection)
+            SectionAdd.ChildAdded:Connect(function(child)
+                if child:IsA("GuiObject") then
+                    child:GetPropertyChangedSignal("Visible"):Connect(UpdateSizeSection)
+                end
+                UpdateSizeSection()
+            end)
             SectionAdd.ChildRemoved:Connect(UpdateSizeSection)
 
             local layout = ScrolLayers:FindFirstChildOfClass("UIListLayout")
@@ -2599,7 +2705,7 @@ function Napoleon:Window(GuiConfig)
                 InputTitle.BorderColor3 = Color3.fromRGB(0, 0, 0)
                 InputTitle.BorderSizePixel = 0
                 InputTitle.Position = UDim2.new(0, 10, 0, 10)
-                InputTitle.Size = UDim2.new(1, -180, 0, 13)
+                InputTitle.Size = UDim2.new(1, -20, 0, 13)
                 InputTitle.Name = "InputTitle"
                 InputTitle.Parent = Input
 
@@ -2616,32 +2722,45 @@ function Napoleon:Window(GuiConfig)
                 InputContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
                 InputContent.BorderSizePixel = 0
                 InputContent.Position = UDim2.new(0, 10, 0, 25)
-                InputContent.Size = UDim2.new(1, -180, 0, 12)
+                InputContent.Size = UDim2.new(1, -20, 0, 12)
                 InputContent.Name = "InputContent"
                 InputContent.Parent = Input
 
-                InputContent.Size = UDim2.new(1, -180, 0,
-                    12 + (12 * (InputContent.TextBounds.X // InputContent.AbsoluteSize.X)))
-                InputContent.TextWrapped = true
-                Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
+                if InputConfig.Content == "" then
+                    InputContent.Visible = false
+                    InputContent.Size = UDim2.new(1, -20, 0, 0)
+                    Input.Size = UDim2.new(1, 0, 0, 73)
+                else
+                    InputContent.Size = UDim2.new(1, -20, 0,
+                        12 + (12 * (InputContent.TextBounds.X // math.max(1, InputContent.AbsoluteSize.X))))
+                    InputContent.TextWrapped = true
+                    Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 75)
+                end
 
                 InputContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                    InputContent.TextWrapped = false
-                    InputContent.Size = UDim2.new(1, -180, 0,
-                        12 + (12 * (InputContent.TextBounds.X // InputContent.AbsoluteSize.X)))
-                    Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
-                    InputContent.TextWrapped = true
-                    UpdateSizeSection()
+                    if InputConfig.Content ~= "" then
+                        InputContent.TextWrapped = false
+                        InputContent.Size = UDim2.new(1, -20, 0,
+                            12 + (12 * (InputContent.TextBounds.X // math.max(1, InputContent.AbsoluteSize.X))))
+                        Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 75)
+                        InputFrame.Position = UDim2.new(0.5, 0, 0, InputContent.Position.Y.Offset + InputContent.AbsoluteSize.Y + 10)
+                        InputContent.TextWrapped = true
+                        UpdateSizeSection()
+                    end
                 end)
 
-                InputFrame.AnchorPoint = Vector2.new(1, 0.5)
+                InputFrame.AnchorPoint = Vector2.new(0.5, 0)
                 InputFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 InputFrame.BackgroundTransparency = 0.949999988079071
                 InputFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
                 InputFrame.BorderSizePixel = 0
                 InputFrame.ClipsDescendants = true
-                InputFrame.Position = UDim2.new(1, -7, 0.5, 0)
-                InputFrame.Size = UDim2.new(0, 148, 0, 30)
+                if InputConfig.Content == "" then
+                    InputFrame.Position = UDim2.new(0.5, 0, 0, 33)
+                else
+                    InputFrame.Position = UDim2.new(0.5, 0, 0, InputContent.Position.Y.Offset + InputContent.AbsoluteSize.Y + 10)
+                end
+                InputFrame.Size = UDim2.new(1, -20, 0, 30)
                 InputFrame.Name = "InputFrame"
                 InputFrame.Parent = Input
 
@@ -2652,7 +2771,7 @@ function Napoleon:Window(GuiConfig)
                 InputTextBox.Font = Enum.Font.GothamBold
                 InputTextBox.PlaceholderColor3 = Color3.fromRGB(120.00000044703484, 120.00000044703484,
                     120.00000044703484)
-                InputTextBox.PlaceholderText = "Input Here"
+                InputTextBox.PlaceholderText = "Write ur input here!"
                 InputTextBox.Text = InputConfig.Default
                 InputTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
                 InputTextBox.TextSize = 12
@@ -3555,6 +3674,13 @@ end
 --         Title    = "Example Input",
 --         Content  = "Type something and press enter",
 --         Default  = "",
+--         Callback = function(val)
+--             notif("Input submitted: " .. tostring(val), 2)
+--         end
+--     })
+
+--     DemoSection:AddInput({
+--         Title    = "Example Input 2",
 --         Callback = function(val)
 --             notif("Input submitted: " .. tostring(val), 2)
 --         end

@@ -162,7 +162,7 @@ local Icons = {
     fish      = "rbxassetid://97167558235554",
     enviicon  = "rbxassetid://101669656973003",
     nplnicon  = "rbxassetid://111895858615511",
-    nplnv4    = "rbxassetid://76157300179532",
+    nplnv4    = "rbxassetid://87167468756710",
 }
 
 local UserInputService = game:GetService("UserInputService")
@@ -424,7 +424,7 @@ function Napoleon:MakeNotify(NotifyConfig)
         DropShadowHolder.Parent = NotifyFrameReal
 
         local NotifIcon = Instance.new("ImageLabel")
-        NotifIcon.Image = "rbxassetid://" .. NotifyConfig.Icon
+        NotifIcon.Image = "rbxassetid://108203634075572" --.. NotifyConfig.Icon
         NotifIcon.BackgroundTransparency = 1
         NotifIcon.ImageTransparency = 0
         NotifIcon.BorderSizePixel = 0
@@ -685,7 +685,7 @@ function Napoleon:Window(GuiConfig)
     TextLabel.Parent = Top
 
     local LogoImg = Instance.new("ImageLabel")
-	LogoImg.Image = "rbxassetid://" .. GuiConfig.LogoHUB
+	LogoImg.Image = "rbxassetid://87167468756710" --.. GuiConfig.LogoHUB
 	LogoImg.BackgroundTransparency = 1
 	LogoImg.BorderSizePixel = 0
 	LogoImg.Size = UDim2.new(0, 22, 0, 22)
@@ -1008,6 +1008,7 @@ function Napoleon:Window(GuiConfig)
 	WindowImg1.Name = "WindowImg1"
 	WindowImg1.ZIndex = -1
 	WindowImg1.Parent = Layers
+    WindowImg1.Visible = false
 
 	local WindowImg2 = Instance.new("ImageLabel")
 	WindowImg2.Image = "rbxassetid://" .. GuiConfig.WindowIMG
@@ -1020,6 +1021,7 @@ function Napoleon:Window(GuiConfig)
 	WindowImg2.Name = "WindowImg2"
 	WindowImg2.ZIndex = 0
 	WindowImg2.Parent = Layers
+    WindowImg2.Visible = false
 
     -- NameTab.Font = Enum.Font.GothamBold
     -- NameTab.Text = ""
@@ -1278,7 +1280,7 @@ function Napoleon:Window(GuiConfig)
         MainButton.Size = UDim2.new(0, 40, 0, 40)
         MainButton.Position = UDim2.new(0, 20, 0, 150)
         MainButton.BackgroundTransparency = 1
-        MainButton.Image = "rbxassetid://" .. GuiConfig.Image
+        MainButton.Image = "rbxassetid://119958938217417" --.. GuiConfig.Image
         MainButton.ScaleType = Enum.ScaleType.Fit
 
         local ToggleUIStroke = Instance.new("UIStroke")
@@ -2260,10 +2262,18 @@ function Napoleon:Window(GuiConfig)
                 ToggleConfig.Content = ToggleConfig.Content or ""
                 ToggleConfig.Default = ToggleConfig.Default or false
                 ToggleConfig.Callback = ToggleConfig.Callback or function() end
+                ToggleConfig.Keybind = ToggleConfig.Keybind or false
 
                 local configKey = "Toggle_" .. ToggleConfig.Title
+                local keybindConfigKey = configKey .. "_Keybind"
+
                 if ConfigData[configKey] ~= nil then
                     ToggleConfig.Default = ConfigData[configKey]
+                end
+
+                local currentKeybind = nil
+                if ConfigData[keybindConfigKey] ~= nil then
+                    currentKeybind = ConfigData[keybindConfigKey]
                 end
 
                 local ToggleFunc = { Value = ToggleConfig.Default }
@@ -2274,10 +2284,13 @@ function Napoleon:Window(GuiConfig)
                 local ToggleContent = Instance.new("TextLabel")
                 local ToggleButton = Instance.new("TextButton")
                 local FeatureFrame2 = Instance.new("Frame")
+                local KeybindFrame = Instance.new("Frame")
                 local UICorner22 = Instance.new("UICorner")
                 local UIStroke8 = Instance.new("UIStroke")
                 local ToggleCircle = Instance.new("Frame")
                 local UICorner23 = Instance.new("UICorner")
+                local UICorner24 = Instance.new("UICorner")
+                local KeybindButton = Instance.new("TextButton")
 
                 Toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 Toggle.BackgroundTransparency = 0.935
@@ -2388,6 +2401,123 @@ function Napoleon:Window(GuiConfig)
 
                 UICorner23.CornerRadius = UDim.new(0, 15)
                 UICorner23.Parent = ToggleCircle
+
+                KeybindFrame.AnchorPoint = Vector2.new(1, 0.5)
+                KeybindFrame.BackgroundTransparency = 0.92
+                KeybindFrame.BorderSizePixel = 0
+                KeybindFrame.Position = UDim2.new(0.9, -20, 0.5, 0)
+                KeybindFrame.Size = UDim2.new(0, 70, 0, 20)
+                KeybindFrame.Name = "KeybindFrame"
+                KeybindFrame.Parent = Toggle
+
+                UICorner24.Parent = KeybindFrame
+
+                KeybindButton.Font = Enum.Font.GothamBold
+                KeybindButton.Text = "Keybind"
+                KeybindButton.BackgroundTransparency = 1
+                KeybindButton.Size = UDim2.new(1, 0, 1, 0)
+                KeybindButton.Position = UDim2.new(0, 0, 0, 0)
+                KeybindButton.TextXAlignment = Enum.TextXAlignment.Center
+                KeybindButton.TextYAlignment = Enum.TextYAlignment.Center
+                KeybindButton.Name = "KeybindButton"
+                KeybindButton.TextColor3 = Color3.fromRGB(225, 225, 225)
+                KeybindButton.TextSize = 12
+                KeybindButton.Parent = KeybindFrame
+
+                local isRecording = false
+                local lastRecordCancel = 0
+
+                local ignoredKeys = {
+                    [Enum.KeyCode.LeftControl] = true, [Enum.KeyCode.RightControl] = true,
+                    [Enum.KeyCode.LeftAlt] = true, [Enum.KeyCode.RightAlt] = true,
+                    [Enum.KeyCode.LeftShift] = true, [Enum.KeyCode.RightShift] = true,
+                    [Enum.KeyCode.Unknown] = true
+                }
+
+                local function GetModifiersString(excludeKey)
+                    local keys = ""
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and excludeKey ~= Enum.KeyCode.LeftControl then keys = keys .. "LeftControl + " end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.RightControl) and excludeKey ~= Enum.KeyCode.RightControl then keys = keys .. "RightControl + " end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt) and excludeKey ~= Enum.KeyCode.LeftAlt then keys = keys .. "LeftAlt + " end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.RightAlt) and excludeKey ~= Enum.KeyCode.RightAlt then keys = keys .. "RightAlt + " end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and excludeKey ~= Enum.KeyCode.LeftShift then keys = keys .. "LeftShift + " end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.RightShift) and excludeKey ~= Enum.KeyCode.RightShift then keys = keys .. "RightShift + " end
+                    return keys
+                end
+
+                KeybindButton:GetPropertyChangedSignal("TextBounds"):Connect(function()
+                    KeybindFrame.Size = UDim2.new(0, KeybindButton.TextBounds.X + 20, 0, 20)
+                end)
+
+                if not ToggleConfig.Keybind or isMobile then
+                    KeybindFrame.Visible = false
+                else
+                    if currentKeybind then
+                        KeybindButton.Text = "[ " .. currentKeybind .. " ]"
+                    else
+                        KeybindButton.Text = "Keybind"
+                    end
+
+                    KeybindButton.MouseButton1Click:Connect(function()
+                        if not isRecording and tick() - lastRecordCancel > 0.1 then
+                            isRecording = true
+                            KeybindButton.Text = "[ ... ]"
+                        end
+                    end)
+
+                    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                        if isRecording then
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                isRecording = false
+                                lastRecordCancel = tick()
+                                currentKeybind = nil
+                                KeybindButton.Text = "Keybind"
+                                ConfigData[keybindConfigKey] = nil
+                                SaveConfig()
+                            elseif input.UserInputType == Enum.UserInputType.Keyboard then
+                                local key = input.KeyCode
+                                if key == Enum.KeyCode.Escape or key == Enum.KeyCode.Backspace then
+                                    isRecording = false
+                                    currentKeybind = nil
+                                    KeybindButton.Text = "Keybind"
+                                    ConfigData[keybindConfigKey] = nil
+                                    SaveConfig()
+                                elseif ignoredKeys[key] then
+                                    if key ~= Enum.KeyCode.Unknown then
+                                        KeybindButton.Text = "[ " .. GetModifiersString() .. "... ]"
+                                    end
+                                else
+                                    local finalBind = GetModifiersString() .. key.Name
+                                    currentKeybind = finalBind
+                                    KeybindButton.Text = "[ " .. finalBind .. " ]"
+                                    isRecording = false
+                                    ConfigData[keybindConfigKey] = currentKeybind
+                                    SaveConfig()
+                                end
+                            end
+                        else
+                            if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+                                if currentKeybind then
+                                    local checkStr = GetModifiersString(input.KeyCode) .. input.KeyCode.Name
+                                    if checkStr == currentKeybind then
+                                        ToggleFunc.Value = not ToggleFunc.Value
+                                        ToggleFunc:Set(ToggleFunc.Value)
+                                    end
+                                end
+                            end
+                        end
+                    end)
+
+                    UserInputService.InputEnded:Connect(function(input, gameProcessed)
+                        if isRecording and ignoredKeys[input.KeyCode] and input.KeyCode ~= Enum.KeyCode.Unknown then
+                            currentKeybind = input.KeyCode.Name
+                            KeybindButton.Text = "[ " .. currentKeybind .. " ]"
+                            isRecording = false
+                            ConfigData[keybindConfigKey] = currentKeybind
+                            SaveConfig()
+                        end
+                    end)
+                end
 
                 ToggleButton.Activated:Connect(function()
                     ToggleFunc.Value = not ToggleFunc.Value
@@ -3531,9 +3661,9 @@ function Napoleon:Window(GuiConfig)
     return Tabs
 end
 
--- ============================================================
--- UI TESTING / EXECUTION
--- ============================================================
+-- -- ============================================================
+-- -- UI TESTING / EXECUTION
+-- -- ============================================================
 -- local ICON_ID = "108203634075572"
 -- local function notif(content, duration, title)
 --     if Napoleon and Napoleon.MakeNotify then
@@ -3616,106 +3746,107 @@ end
     
 --     local DemoSection = MainTab:AddSection("Elements Showcase")
 
---     DemoSection:AddParagraph({
---         Title          = "Paragraph Demo",
---         Content        = "This is a paragraph example.\nYou can write multiline descriptions here.",
---         ButtonText     = "Click Me",
---         ButtonCallback = function()
---             notif("Paragraph button clicked!", 2)
---         end
---     })
+--     -- DemoSection:AddParagraph({
+--     --     Title          = "Paragraph Demo",
+--     --     Content        = "This is a paragraph example.\nYou can write multiline descriptions here.",
+--     --     ButtonText     = "Click Me",
+--     --     ButtonCallback = function()
+--     --         notif("Paragraph button clicked!", 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddButton({
---         Title = "Normal Button",
---         Callback = function()
---             notif("Normal button clicked!", 2)
---         end
---     })
+--     -- DemoSection:AddButton({
+--     --     Title = "Normal Button",
+--     --     Callback = function()
+--     --         notif("Normal button clicked!", 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddButton({
---         Title       = "Dual Button",
---         SubTitle    = "Second Button",
---         Callback    = function()
---             notif("Main button clicked!", 2)
---         end,
---         SubCallback = function()
---             notif("Sub button clicked!", 2)
---         end
---     })
+--     -- DemoSection:AddButton({
+--     --     Title       = "Dual Button",
+--     --     SubTitle    = "Second Button",
+--     --     Callback    = function()
+--     --         notif("Main button clicked!", 2)
+--     --     end,
+--     --     SubCallback = function()
+--     --         notif("Sub button clicked!", 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddDivider()
+--     -- DemoSection:AddDivider()
 
---     DemoSection:AddSubSection("Toggles & Sliders")
+--     -- DemoSection:AddSubSection("Toggles & Sliders")
 
 --     DemoSection:AddToggle({
 --         Title    = "Example Toggle",
 --         Default  = false,
+--         Keybind  = true,
 --         Callback = function(value)
 --             notif("Toggle is now: " .. tostring(value), 2)
 --         end
 --     })
 
---     DemoSection:AddSlider({
---         Title     = "Example Slider",
---         Increment = 1,
---         Min       = 1,
---         Max       = 100,
---         Default   = 50,
---         Callback  = function(value)
---             -- notif("Slider value: " .. tostring(value), 2)
---         end
---     })
+--     -- DemoSection:AddSlider({
+--     --     Title     = "Example Slider",
+--     --     Increment = 1,
+--     --     Min       = 1,
+--     --     Max       = 100,
+--     --     Default   = 50,
+--     --     Callback  = function(value)
+--     --         -- notif("Slider value: " .. tostring(value), 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddDivider()
+--     -- DemoSection:AddDivider()
 
---     DemoSection:AddSubSection("Inputs & Dropdowns")
+--     -- DemoSection:AddSubSection("Inputs & Dropdowns")
 
---     DemoSection:AddInput({
---         Title    = "Example Input",
---         Content  = "Type something and press enter",
---         Default  = "",
---         Callback = function(val)
---             notif("Input submitted: " .. tostring(val), 2)
---         end
---     })
+--     -- DemoSection:AddInput({
+--     --     Title    = "Example Input",
+--     --     Content  = "Type something and press enter",
+--     --     Default  = "",
+--     --     Callback = function(val)
+--     --         notif("Input submitted: " .. tostring(val), 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddInput({
---         Title    = "Example Input 2",
---         Callback = function(val)
---             notif("Input submitted: " .. tostring(val), 2)
---         end
---     })
+--     -- DemoSection:AddInput({
+--     --     Title    = "Example Input 2",
+--     --     Callback = function(val)
+--     --         notif("Input submitted: " .. tostring(val), 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddPanel({
---         Title       = "Example Panel",
---         Placeholder = "Enter text here...",
---         ButtonText  = "Submit Panel",
---         Callback    = function(val)
---             notif("Panel submitted: " .. tostring(val), 2)
---         end
---     })
+--     -- DemoSection:AddPanel({
+--     --     Title       = "Example Panel",
+--     --     Placeholder = "Enter text here...",
+--     --     ButtonText  = "Submit Panel",
+--     --     Callback    = function(val)
+--     --         notif("Panel submitted: " .. tostring(val), 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddDropdown({
---         Title    = "Single Dropdown",
---         Content  = "Select one option",
---         Options  = { "Option 1", "Option 2", "Option 3" },
---         Default  = "Option 1",
---         Multi    = false,
---         Callback = function(val)
---             notif("Selected: " .. tostring(val), 2)
---         end
---     })
+--     -- DemoSection:AddDropdown({
+--     --     Title    = "Single Dropdown",
+--     --     Content  = "Select one option",
+--     --     Options  = { "Option 1", "Option 2", "Option 3" },
+--     --     Default  = "Option 1",
+--     --     Multi    = false,
+--     --     Callback = function(val)
+--     --         notif("Selected: " .. tostring(val), 2)
+--     --     end
+--     -- })
 
---     DemoSection:AddDropdown({
---         Title    = "Multi Dropdown",
---         Content  = "Select multiple options",
---         Options  = { "Apple", "Banana", "Orange" },
---         Default  = {"Apple"},
---         Multi    = true,
---         Callback = function(val)
---             -- val is a table of selected items
---         end
---     })
+--     -- DemoSection:AddDropdown({
+--     --     Title    = "Multi Dropdown",
+--     --     Content  = "Select multiple options",
+--     --     Options  = { "Apple", "Banana", "Orange" },
+--     --     Default  = {"Apple"},
+--     --     Multi    = true,
+--     --     Callback = function(val)
+--     --         -- val is a table of selected items
+--     --     end
+--     -- })
 -- end
 
 -- LoadInfoTab()

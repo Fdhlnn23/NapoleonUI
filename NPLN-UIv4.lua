@@ -1,11 +1,13 @@
 local HttpService = game:GetService("HttpService")
 
-if not isfolder("Napoleon") then
-    makefolder("Napoleon")
-end
-if not isfolder("Napoleon/Config") then
-    makefolder("Napoleon/Config")
-end
+pcall(function()
+    if not isfolder("Napoleon") then
+        makefolder("Napoleon")
+    end
+    if not isfolder("Napoleon/Config") then
+        makefolder("Napoleon/Config")
+    end
+end)
 
 local gameName   = tostring(game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
 gameName         = gameName:gsub("[^%w_ ]", "")
@@ -20,13 +22,21 @@ CURRENT_VERSION  = nil
 function SaveConfig()
     if writefile then
         ConfigData._version = CURRENT_VERSION
-        writefile(ConfigFile, HttpService:JSONEncode(ConfigData))
+        pcall(function()
+            writefile(ConfigFile, HttpService:JSONEncode(ConfigData))
+        end)
     end
 end
 
 function LoadConfigFromFile()
     if not CURRENT_VERSION then return end
-    if isfile and isfile(ConfigFile) then
+    
+    local isFileSuccess, isFileResult = false, false
+    if isfile then
+        isFileSuccess, isFileResult = pcall(function() return isfile(ConfigFile) end)
+    end
+
+    if isFileSuccess and isFileResult then
         local success, result = pcall(function()
             return HttpService:JSONDecode(readfile(ConfigFile))
         end)
@@ -94,7 +104,9 @@ end
 function LoadProfile(name)
     if not name or name == "" then return false end
     local path = PROFILE_FOLDER .. "/" .. name .. ".json"
-    if not isfile or not isfile(path) then return false end
+    if not isfile then return false end
+    local isFileSuccess, isFileResult = pcall(function() return isfile(path) end)
+    if not isFileSuccess or not isFileResult then return false end
     local ok, data = pcall(function()
         return HttpService:JSONDecode(readfile(path))
     end)
@@ -356,12 +368,12 @@ function Napoleon:MakeNotify(NotifyConfig)
         end
         if not CoreGui.NotifyGui:FindFirstChild("NotifyLayout") then
             local NotifyLayout = Instance.new("Frame");
-            NotifyLayout.AnchorPoint = Vector2.new(1, 1)
+            NotifyLayout.AnchorPoint = Vector2.new(1, 0)
             NotifyLayout.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             NotifyLayout.BackgroundTransparency = 0.9990000128746033
             NotifyLayout.BorderColor3 = Color3.fromRGB(0, 0, 0)
             NotifyLayout.BorderSizePixel = 0
-            NotifyLayout.Position = UDim2.new(1, -30, 1, -30)
+            NotifyLayout.Position = UDim2.new(1, -30, 0, 30)
             NotifyLayout.Size = UDim2.new(0, 320, 1, 0)
             NotifyLayout.Name = "NotifyLayout"
             NotifyLayout.Parent = CoreGui.NotifyGui
@@ -372,7 +384,7 @@ function Napoleon:MakeNotify(NotifyConfig)
                     TweenService:Create(
                         v,
                         TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                        { Position = UDim2.new(0, 0, 1, -((v.Size.Y.Offset + 12) * Count)) }
+                        { Position = UDim2.new(0, 0, 0, ((v.Size.Y.Offset + 12) * Count)) }
                     ):Play()
                     Count = Count + 1
                 end
@@ -380,7 +392,7 @@ function Napoleon:MakeNotify(NotifyConfig)
         end
         local NotifyPosHeigh = 0
         for i, v in CoreGui.NotifyGui.NotifyLayout:GetChildren() do
-            NotifyPosHeigh = -(v.Position.Y.Offset) + v.Size.Y.Offset + 12
+            NotifyPosHeigh = v.Position.Y.Offset + v.Size.Y.Offset + 12
         end
         local NotifyFrame = Instance.new("Frame");
         local NotifyFrameReal = Instance.new("Frame");
@@ -402,8 +414,8 @@ function Napoleon:MakeNotify(NotifyConfig)
         NotifyFrame.Name = "NotifyFrame"
         NotifyFrame.BackgroundTransparency = 1
         NotifyFrame.Parent = CoreGui.NotifyGui.NotifyLayout
-        NotifyFrame.AnchorPoint = Vector2.new(0, 1)
-        NotifyFrame.Position = UDim2.new(0, 0, 1, -(NotifyPosHeigh))
+        NotifyFrame.AnchorPoint = Vector2.new(0, 0)
+        NotifyFrame.Position = UDim2.new(0, 0, 0, NotifyPosHeigh)
 
         NotifyFrameReal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         NotifyFrameReal.BorderColor3 = Color3.fromRGB(0, 0, 0)

@@ -9,11 +9,12 @@ pcall(function()
     end
 end)
 
-local gameName   = tostring(game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
-gameName         = gameName:gsub("[^%w_ ]", "")
-gameName         = gameName:gsub("%s+", "_")
+local univId = tostring(game.GameId)
+if univId == "0" or univId == "" then
+    univId = tostring(game.PlaceId)
+end
 
-local ConfigFile = "Napoleon/Config/Napoleon_" .. gameName .. ".json"
+local ConfigFile = "Napoleon/Config/Napoleon_" .. univId .. ".json"
 
 ConfigData       = {}
 Elements         = {}

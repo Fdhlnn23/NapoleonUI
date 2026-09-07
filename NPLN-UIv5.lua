@@ -1372,7 +1372,7 @@ function Napoleon:Window(GuiConfig)
         MainButton.Size = UDim2.new(0, 40, 0, 40)
         MainButton.Position = UDim2.new(0, 20, 0, 150)
         MainButton.BackgroundTransparency = 1
-        MainButton.Image = "rbxassetid://119958938217417" --.. GuiConfig.Image
+        MainButton.Image = "rbxassetid://90610669808642" --.. GuiConfig.Image
         MainButton.ScaleType = Enum.ScaleType.Fit
 
         local ToggleUIStroke = Instance.new("UIStroke")

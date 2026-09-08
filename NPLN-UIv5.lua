@@ -2754,7 +2754,7 @@ function Napoleon:Window(GuiConfig)
                 Slider.Name = "Slider"
                 Slider.Parent = SectionAdd
 
-                UICorner15.CornerRadius = UDim.new(0, 4)
+                UICorner15.CornerRadius = UDim.new(0, 13)
                 UICorner15.Parent = Slider
 
                 SliderTitle.Font = Enum.Font.GothamBold

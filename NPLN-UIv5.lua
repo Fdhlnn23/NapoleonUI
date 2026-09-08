@@ -153,10 +153,10 @@ local Icons = {
     boss      = "rbxassetid://13132186360",
     scroll    = "rbxassetid://114127804740858",
     menu      = "rbxassetid://6340513838",
-    crosshair = "rbxassetid://12614416478",
+    crosshair = "rbxassetid://116015325657452",
     user      = "rbxassetid://108483430622128",
     stat      = "rbxassetid://12094445329",
-    eyes      = "rbxassetid://14321059114",
+    eyes      = "rbxassetid://87161816465299",
     sword     = "rbxassetid://82472368671405",
     discord   = "rbxassetid://94434236999817",
     star      = "rbxassetid://107005941750079",
@@ -175,7 +175,9 @@ local Icons = {
     fish      = "rbxassetid://97167558235554",
     nplnnewerav1icon = "rbxassetid://90610669808642",
     truck = "rbxassetid://100416780768944",
-    maps = "rbxassetid://82331242881427"
+    maps = "rbxassetid://82331242881427",
+	info = "rbxassetid://131122219145796",
+	shield = "rbxassetid://117686846284339"
 }
 
 local UserInputService = game:GetService("UserInputService")

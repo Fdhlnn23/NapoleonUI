@@ -3910,9 +3910,13 @@ function Napoleon:Window(GuiConfig)
                         end
                     end
 
-                    OptionSelecting.Text = (#texts == 0)
-                        and (DropdownConfig.Multi and "Select Options" or "Select Option")
-                        or table.concat(texts, ", ")
+                    if #texts == 0 then
+                        OptionSelecting.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
+                    elseif DropdownConfig.Multi and #texts > 2 then
+                        OptionSelecting.Text = tostring(#texts) .. " Selected"
+                    else
+                        OptionSelecting.Text = table.concat(texts, ", ")
+                    end
 
                     if DropdownConfig.Callback then
                         if DropdownConfig.Multi then

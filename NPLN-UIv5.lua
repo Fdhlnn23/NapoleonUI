@@ -3712,6 +3712,7 @@ function Napoleon:Window(GuiConfig)
                 OptionSelecting.BackgroundTransparency = 1
                 OptionSelecting.Position = UDim2.new(0, 5, 0.5, 0)
                 OptionSelecting.Size = UDim2.new(1, -30, 1, -8)
+                OptionSelecting.TextTruncate = Enum.TextTruncate.AtEnd
                 OptionSelecting.Name = "OptionSelecting"
                 OptionSelecting.Parent = SelectOptionsFrame
 
@@ -3912,8 +3913,14 @@ function Napoleon:Window(GuiConfig)
 
                     if #texts == 0 then
                         OptionSelecting.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
-                    elseif DropdownConfig.Multi and #texts > 2 then
-                        OptionSelecting.Text = tostring(#texts) .. " Selected"
+                    elseif DropdownConfig.Multi then
+                        local combined = table.concat(texts, ", ")
+                        local textWidth = TextService:GetTextSize(combined, 12, Enum.Font.GothamBold, Vector2.new(1000, 50)).X
+                        if #texts > 2 or textWidth > 112 or #combined > 16 then
+                            OptionSelecting.Text = tostring(#texts) .. " Selected"
+                        else
+                            OptionSelecting.Text = combined
+                        end
                     else
                         OptionSelecting.Text = table.concat(texts, ", ")
                     end

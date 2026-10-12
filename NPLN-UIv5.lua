@@ -153,10 +153,10 @@ local Icons = {
     boss      = "rbxassetid://13132186360",
     scroll    = "rbxassetid://114127804740858",
     menu      = "rbxassetid://6340513838",
-    crosshair = "rbxassetid://116015325657452",
+    crosshair = "rbxassetid://12614416478",
     user      = "rbxassetid://108483430622128",
     stat      = "rbxassetid://12094445329",
-    eyes      = "rbxassetid://87161816465299",
+    eyes      = "rbxassetid://14321059114",
     sword     = "rbxassetid://82472368671405",
     discord   = "rbxassetid://94434236999817",
     star      = "rbxassetid://107005941750079",
@@ -176,8 +176,7 @@ local Icons = {
     nplnnewerav1icon = "rbxassetid://90610669808642",
     truck = "rbxassetid://100416780768944",
     maps = "rbxassetid://82331242881427",
-	info = "rbxassetid://131122219145796",
-	shield = "rbxassetid://117686846284339"
+    signal = "rbxassetid://10734961133"
 }
 
 local UserInputService = game:GetService("UserInputService")
@@ -185,6 +184,8 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local CoreGui = game:GetService("CoreGui")
+local TextService = game:GetService("TextService")
+local GuiService = game:GetService("GuiService")
 local viewport = workspace.CurrentCamera.ViewportSize
 
 local function isMobileDevice()
@@ -259,8 +260,8 @@ local function MakeDraggable(topbarobject, object)
             minSizeX, minSizeY = 470, 270
             defSizeX, defSizeY = 470, 270
         else
-            minSizeX, minSizeY = 586, 364
-            defSizeX, defSizeY = 586, 364
+            minSizeX, minSizeY = 651, 397
+            defSizeX, defSizeY = 651, 397
         end
 
         object.Size = UDim2.new(0, defSizeX, 0, defSizeY)
@@ -639,6 +640,204 @@ function Napoleon:Window(GuiConfig)
     NapoleonOnTop.ResetOnSpawn = false
     NapoleonOnTop.Parent = game:GetService("CoreGui")
 
+    -- ============================================================
+    -- GLOBAL TOOLTIP SYSTEM
+    -- ============================================================
+    local TooltipFrame = Instance.new("Frame")
+    local TooltipCorner = Instance.new("UICorner")
+    local TooltipStroke = Instance.new("UIStroke")
+    local TooltipLabel = Instance.new("TextLabel")
+    local TooltipPadding = Instance.new("UIPadding")
+
+    TooltipFrame.Name = "NapoleonTooltip"
+    TooltipFrame.BackgroundColor3 = Color3.fromRGB(18, 17, 26)
+    TooltipFrame.BackgroundTransparency = 1
+    TooltipFrame.BorderSizePixel = 0
+    TooltipFrame.Visible = false
+    TooltipFrame.ZIndex = 99999
+    TooltipFrame.Active = false
+    TooltipFrame.ClipsDescendants = false
+    TooltipFrame.Parent = NapoleonOnTop
+
+    TooltipCorner.CornerRadius = UDim.new(0, 8)
+    TooltipCorner.Parent = TooltipFrame
+
+    TooltipStroke.Color = Color3.fromRGB(255, 255, 255)
+    TooltipStroke.Transparency = 1
+    TooltipStroke.Thickness = 1
+    TooltipStroke.Parent = TooltipFrame
+
+    TooltipPadding.PaddingTop = UDim.new(0, 7)
+    TooltipPadding.PaddingBottom = UDim.new(0, 7)
+    TooltipPadding.PaddingLeft = UDim.new(0, 11)
+    TooltipPadding.PaddingRight = UDim.new(0, 11)
+    TooltipPadding.Parent = TooltipFrame
+
+    TooltipLabel.Name = "TooltipText"
+    TooltipLabel.BackgroundTransparency = 1
+    TooltipLabel.Font = Enum.Font.GothamBold
+    TooltipLabel.TextSize = 11
+    TooltipLabel.TextColor3 = Color3.fromRGB(235, 235, 240)
+    TooltipLabel.TextTransparency = 1
+    TooltipLabel.TextWrapped = true
+    TooltipLabel.TextXAlignment = Enum.TextXAlignment.Center
+    TooltipLabel.TextYAlignment = Enum.TextYAlignment.Center
+    TooltipLabel.Size = UDim2.new(1, 0, 1, 0)
+    TooltipLabel.ZIndex = 100000
+    TooltipLabel.Active = false
+    TooltipLabel.Parent = TooltipFrame
+
+    local activeTooltipTarget = nil
+    local tooltipHideToken = 0
+
+    local function PositionTooltip(targetObject, forcedW, forcedH)
+        if not TooltipFrame.Visible and not forcedW then return end
+        local mousePos = UserInputService:GetMouseLocation()
+        local guiInset = GuiService:GetGuiInset()
+        local mouseX = mousePos.X
+        local mouseY = mousePos.Y - guiInset.Y
+
+        if (mousePos == Vector2.zero or (mouseX <= 0 and mouseY <= 0)) and targetObject then
+            local absPos = targetObject.AbsolutePosition
+            local absSize = targetObject.AbsoluteSize
+            mouseX = absPos.X + absSize.X / 2
+            mouseY = absPos.Y - guiInset.Y
+        end
+
+        local screenWidth = (NapoleonOnTop and NapoleonOnTop.AbsoluteSize.X > 0) and NapoleonOnTop.AbsoluteSize.X or 1920
+        local tooltipW = forcedW or (TooltipFrame.AbsoluteSize.X > 0 and TooltipFrame.AbsoluteSize.X or 240)
+        local tooltipH = forcedH or (TooltipFrame.AbsoluteSize.Y > 0 and TooltipFrame.AbsoluteSize.Y or 40)
+
+        local clampedX = math.clamp(mouseX, tooltipW / 2 + 10, screenWidth - tooltipW / 2 - 10)
+
+        if mouseY - tooltipH - 12 < 10 then
+            TooltipFrame.AnchorPoint = Vector2.new(0.5, 0)
+            TooltipFrame.Position = UDim2.new(0, clampedX, 0, mouseY + 18)
+        else
+            TooltipFrame.AnchorPoint = Vector2.new(0.5, 1)
+            TooltipFrame.Position = UDim2.new(0, clampedX, 0, mouseY - 8)
+        end
+    end
+
+    local function ShowTooltip(fullText, targetObject)
+        if not fullText or fullText == "" then return end
+        activeTooltipTarget = targetObject
+        tooltipHideToken = tooltipHideToken + 1
+        local currentToken = tooltipHideToken
+
+        TooltipLabel.Text = fullText
+        local maxW = 270
+        local textSize = TextService:GetTextSize(fullText, 11, Enum.Font.GothamBold, Vector2.new(maxW, 1000))
+        local finalW = math.clamp(textSize.X + 26, 120, maxW + 26)
+        local finalH = textSize.Y + 16
+
+        TooltipFrame.Size = UDim2.new(0, finalW, 0, finalH)
+        PositionTooltip(targetObject, finalW, finalH)
+        TooltipFrame.Visible = true
+
+        TweenService:Create(TooltipFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 0.08
+        }):Play()
+        TweenService:Create(TooltipStroke, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Transparency = 0.88
+        }):Play()
+        TweenService:Create(TooltipLabel, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 0.1
+        }):Play()
+    end
+
+    local function HideTooltip(targetObject)
+        if targetObject and activeTooltipTarget ~= targetObject then return end
+        activeTooltipTarget = nil
+        tooltipHideToken = tooltipHideToken + 1
+        local currentToken = tooltipHideToken
+
+        local t1 = TweenService:Create(TooltipFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 1
+        })
+        local t2 = TweenService:Create(TooltipStroke, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Transparency = 1
+        })
+        local t3 = TweenService:Create(TooltipLabel, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 1
+        })
+
+        t1:Play()
+        t2:Play()
+        t3:Play()
+
+        t1.Completed:Connect(function()
+            if tooltipHideToken == currentToken and activeTooltipTarget == nil then
+                TooltipFrame.Visible = false
+            end
+        end)
+    end
+
+    UserInputService.InputChanged:Connect(function(input)
+        if activeTooltipTarget and input.UserInputType == Enum.UserInputType.MouseMovement then
+            PositionTooltip(activeTooltipTarget)
+        end
+    end)
+
+    local DEFAULT_MAX_CONTENT = 41
+
+    local function SetupContentWithTooltip(contentLabel, rawContent, maxText, onClick)
+        maxText = maxText or DEFAULT_MAX_CONTENT
+        rawContent = rawContent or ""
+
+        if rawContent == "" then
+            contentLabel.Visible = false
+            contentLabel.Text = ""
+            local oldDetector = contentLabel:FindFirstChild("TooltipHoverDetector")
+            if oldDetector then oldDetector:Destroy() end
+            return
+        end
+
+        contentLabel.Visible = true
+
+        if #rawContent > maxText then
+            contentLabel.Text = string.sub(rawContent, 1, maxText) .. "..."
+
+            local hoverDetector = contentLabel:FindFirstChild("TooltipHoverDetector")
+            if not hoverDetector then
+                hoverDetector = Instance.new("TextButton")
+                hoverDetector.Name = "TooltipHoverDetector"
+                hoverDetector.BackgroundTransparency = 1
+                hoverDetector.Text = ""
+                hoverDetector.Size = UDim2.new(1, 0, 1, 0)
+                hoverDetector.ZIndex = 8
+                hoverDetector.Parent = contentLabel
+            end
+
+            hoverDetector.MouseEnter:Connect(function()
+                ShowTooltip(rawContent, contentLabel)
+            end)
+
+            hoverDetector.MouseLeave:Connect(function()
+                HideTooltip(contentLabel)
+            end)
+
+            hoverDetector.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch then
+                    ShowTooltip(rawContent, contentLabel)
+                    task.delay(3, function()
+                        HideTooltip(contentLabel)
+                    end)
+                end
+            end)
+
+            if onClick then
+                hoverDetector.Activated:Connect(function()
+                    onClick()
+                end)
+            end
+        else
+            contentLabel.Text = rawContent
+            local oldDetector = contentLabel:FindFirstChild("TooltipHoverDetector")
+            if oldDetector then oldDetector:Destroy() end
+        end
+    end
+
     DropShadowHolder.BackgroundTransparency = 1
 	--DropShadowHolder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     DropShadowHolder.BorderSizePixel = 0
@@ -647,7 +846,7 @@ function Napoleon:Window(GuiConfig)
     if isMobile then
         DropShadowHolder.Size = UDim2.new(0, 470, 0, 270)
     else
-        DropShadowHolder.Size = UDim2.new(0, 586, 0, 364)
+        DropShadowHolder.Size = UDim2.new(0, 651, 0, 397)
     end
     DropShadowHolder.ZIndex = 0
     DropShadowHolder.Name = "DropShadowHolder"
@@ -668,9 +867,8 @@ function Napoleon:Window(GuiConfig)
     DropShadow.Name = "DropShadow"
     DropShadow.Parent = DropShadowHolder
 
-    Main.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-    Main.BackgroundTransparency = 0.15
-
+    Main.BackgroundColor3 = Color3.fromRGB(16, 15, 24)
+    Main.BackgroundTransparency = 0.03
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Main.BorderSizePixel = 0
@@ -706,7 +904,7 @@ function Napoleon:Window(GuiConfig)
     TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
     TextLabel.BorderSizePixel = 1
     TextLabel.Size = UDim2.new(1, -100, 0.5, 0)
-    TextLabel.Position = UDim2.new(0, 38, 0, 3)
+    TextLabel.Position = UDim2.new(0, 38, 0, 9)
     TextLabel.Parent = Top
 
     ContentTitle.Parent = Top
@@ -721,6 +919,7 @@ function Napoleon:Window(GuiConfig)
     ContentTitle.BorderSizePixel = 1
     ContentTitle.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ContentTitle.TextTransparency = 0.5
+    ContentTitle.Visible = false
 
     local LogoImg = Instance.new("ImageLabel")
 	LogoImg.Image = "rbxassetid://" .. (GuiConfig.LogoHUB or "87167468756710")
@@ -753,9 +952,9 @@ function Napoleon:Window(GuiConfig)
     local FooterFrame = Instance.new("Frame")
     FooterFrame.Name = "FooterFrame"
     FooterFrame.LayoutOrder = 1
-    FooterFrame.Size = UDim2.new(0, 0, 0.6, 0)
-    FooterFrame.BackgroundColor3 = GuiConfig.Color
-    FooterFrame.BackgroundTransparency = 0
+    FooterFrame.Size = UDim2.new(0, 0, 0.5, 0)
+    FooterFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    FooterFrame.BackgroundTransparency = 0.92
     FooterFrame.BorderSizePixel = 0
     FooterFrame.AutomaticSize = Enum.AutomaticSize.X
     FooterFrame.Parent = RightContainer
@@ -769,27 +968,129 @@ function Napoleon:Window(GuiConfig)
     FooterCorner.CornerRadius = UDim.new(1, 0)
     FooterCorner.Parent = FooterFrame
 
+    local FooterStroke = Instance.new("UIStroke")
+    FooterStroke.Color = Color3.fromRGB(255, 255, 255)
+    FooterStroke.Thickness = 1
+    FooterStroke.Transparency = 0.85
+    FooterStroke.Parent = FooterFrame
+
+    local FooterStrokeGradient = Instance.new("UIGradient")
+    FooterStrokeGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
+    })
+    FooterStrokeGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.5, 1),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    FooterStrokeGradient.Rotation = 80
+    FooterStrokeGradient.Parent = FooterStroke
+
     TextLabel1.Name = "FooterText"
     TextLabel1.Size = UDim2.new(0, 0, 1, 0)
-    TextLabel1.Position = UDim2.new(0, 0, 0, 0)
+    TextLabel1.Position = UDim2.new(0, 0, 0, -1)
     TextLabel1.BackgroundTransparency = 1
-    TextLabel1.Font = Enum.Font.GothamBold
+    TextLabel1.Font = Enum.Font.Gotham
     TextLabel1.Text = GuiConfig.Footer
     TextLabel1.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TextLabel1.TextSize = 12
+    TextLabel1.TextSize = 11
     TextLabel1.TextXAlignment = Enum.TextXAlignment.Center
     TextLabel1.AutomaticSize = Enum.AutomaticSize.X
     TextLabel1.Parent = FooterFrame
 
+    local PingFrame = Instance.new("Frame")
+    PingFrame.Name = "PingFrame"
+    PingFrame.LayoutOrder = 2
+    PingFrame.Size = UDim2.new(0, 0, 0.5, 0)
+    PingFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    PingFrame.BackgroundTransparency = 0.92
+    PingFrame.BorderSizePixel = 0
+    PingFrame.AutomaticSize = Enum.AutomaticSize.X
+    PingFrame.Parent = RightContainer
+
+    local PingPadding = Instance.new("UIPadding")
+    PingPadding.PaddingLeft = UDim.new(0, 10)
+    PingPadding.PaddingRight = UDim.new(0, 10)
+    PingPadding.Parent = PingFrame
+
+    local PingCorner = Instance.new("UICorner")
+    PingCorner.CornerRadius = UDim.new(1, 0)
+    PingCorner.Parent = PingFrame
+
+    local PingStroke = Instance.new("UIStroke")
+    PingStroke.Color = Color3.fromRGB(255, 255, 255)
+    PingStroke.Thickness = 1
+    PingStroke.Transparency = 0.85
+    PingStroke.Parent = PingFrame
+
+    local PingStrokeGradient = Instance.new("UIGradient")
+    PingStrokeGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
+    })
+    PingStrokeGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.5, 1),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    PingStrokeGradient.Rotation = 80
+    PingStrokeGradient.Parent = PingStroke
+
+    local PingListLayout = Instance.new("UIListLayout")
+    PingListLayout.FillDirection = Enum.FillDirection.Horizontal
+    PingListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    PingListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    PingListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    PingListLayout.Padding = UDim.new(0, 4)
+    PingListLayout.Parent = PingFrame
+
+    local PingIcon = Instance.new("ImageLabel")
+    PingIcon.Name = "PingIcon"
+    PingIcon.LayoutOrder = 1
+    PingIcon.Size = UDim2.new(0, 11, 0, 11)
+    PingIcon.BackgroundTransparency = 1
+    PingIcon.Image = Icons.signal or "rbxassetid://10734961133"
+    PingIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    PingIcon.ScaleType = Enum.ScaleType.Fit
+    PingIcon.Parent = PingFrame
+
+    local PingTextLabel = Instance.new("TextLabel")
+    PingTextLabel.Name = "PingTextLabel"
+    PingTextLabel.LayoutOrder = 2
+    PingTextLabel.Size = UDim2.new(0, 0, 1, 0)
+    PingTextLabel.Position = UDim2.new(0, 0, 0, -1)
+    PingTextLabel.BackgroundTransparency = 1
+    PingTextLabel.Font = Enum.Font.Gotham
+    PingTextLabel.Text = "0 ms"
+    PingTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PingTextLabel.TextSize = 11
+    PingTextLabel.TextXAlignment = Enum.TextXAlignment.Center
+    PingTextLabel.AutomaticSize = Enum.AutomaticSize.X
+    PingTextLabel.Parent = PingFrame
+
+    task.spawn(function()
+        while PingTextLabel and PingTextLabel.Parent do
+            local ping = 0
+            pcall(function()
+                ping = math.round(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+            end)
+            PingTextLabel.Text = tostring(ping) .. " ms"
+            task.wait(1)
+        end
+    end)
+
     local execName = (identifyexecutor and identifyexecutor()) or "Unknown"
-    local execText = "Executor: " .. tostring(execName)
+    local execText = "" .. tostring(execName)
 
     local Executor = Instance.new("Frame")
     Executor.Name = "Executor"
-    Executor.LayoutOrder = 2
-    Executor.Size = UDim2.new(0, 0, 0.6, 0)
-    Executor.BackgroundColor3 = GuiConfig.Color
-    Executor.BackgroundTransparency = 0
+    Executor.LayoutOrder = 3
+    Executor.Size = UDim2.new(0, 0, 0.5, 0)
+    Executor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Executor.BackgroundTransparency = 0.92
     Executor.BorderSizePixel = 0
     Executor.AutomaticSize = Enum.AutomaticSize.X
     Executor.Parent = RightContainer
@@ -803,15 +1104,54 @@ function Napoleon:Window(GuiConfig)
     ExecutorUICorner.CornerRadius = UDim.new(1, 0)
     ExecutorUICorner.Parent = Executor
 
+    local ExecutorStroke = Instance.new("UIStroke")
+    ExecutorStroke.Color = Color3.fromRGB(255, 255, 255)
+    ExecutorStroke.Thickness = 1
+    ExecutorStroke.Transparency = 0.85
+    ExecutorStroke.Parent = Executor
+
+    local ExecutorStrokeGradient = Instance.new("UIGradient")
+    ExecutorStrokeGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
+    })
+    ExecutorStrokeGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.5, 1),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    ExecutorStrokeGradient.Rotation = 80
+    ExecutorStrokeGradient.Parent = ExecutorStroke
+
+    local ExecutorListLayout = Instance.new("UIListLayout")
+    ExecutorListLayout.FillDirection = Enum.FillDirection.Horizontal
+    ExecutorListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    ExecutorListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    ExecutorListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ExecutorListLayout.Padding = UDim.new(0, 4)
+    ExecutorListLayout.Parent = Executor
+
+    local ExecutorIcon = Instance.new("ImageLabel")
+    ExecutorIcon.Name = "ExecutorIcon"
+    ExecutorIcon.LayoutOrder = 1
+    ExecutorIcon.Size = UDim2.new(0, 11, 0, 11)
+    ExecutorIcon.BackgroundTransparency = 1
+    ExecutorIcon.Image = Icons.plug or "rbxassetid://137601480983962"
+    ExecutorIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    ExecutorIcon.ScaleType = Enum.ScaleType.Fit
+    ExecutorIcon.Parent = Executor
+
     local ExecutorTextLabel = Instance.new("TextLabel")
-    ExecutorTextLabel.Name = "TextLabel"
+    ExecutorTextLabel.Name = "ExecutorTextLabel"
+    ExecutorTextLabel.LayoutOrder = 2
     ExecutorTextLabel.Size = UDim2.new(0, 0, 1, 0)
-    ExecutorTextLabel.Position = UDim2.new(0, 0, 0, 0)
+    ExecutorTextLabel.Position = UDim2.new(0, 0, 0, -1)
     ExecutorTextLabel.BackgroundTransparency = 1
-    ExecutorTextLabel.Font = Enum.Font.GothamBold
+    ExecutorTextLabel.Font = Enum.Font.Gotham
     ExecutorTextLabel.Text = execText
     ExecutorTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ExecutorTextLabel.TextSize = 12
+    ExecutorTextLabel.TextSize = 11
     ExecutorTextLabel.TextXAlignment = Enum.TextXAlignment.Center
     ExecutorTextLabel.AutomaticSize = Enum.AutomaticSize.X
     ExecutorTextLabel.Parent = Executor
@@ -903,9 +1243,9 @@ function Napoleon:Window(GuiConfig)
 
         local strokeGradient = Instance.new("UIGradient")
         strokeGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
             ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
         })
         strokeGradient.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 0),
@@ -938,36 +1278,88 @@ function Napoleon:Window(GuiConfig)
     LayersTab.Name = "LayersTab"
     LayersTab.Parent = Main
 
+    local isCollapsed = false
+
+    local CollapseButton = Instance.new("TextButton")
+    CollapseButton.Name = "CollapseButton"
+    CollapseButton.Size = UDim2.new(0, 20, 0, 29)
+    CollapseButton.Position = UDim2.new(0, 0, 0, 0)
+    CollapseButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    CollapseButton.BackgroundTransparency = 0.93
+    CollapseButton.BorderSizePixel = 0
+    CollapseButton.Text = "‹"
+    CollapseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CollapseButton.TextSize = 18
+    CollapseButton.Font = Enum.Font.GothamBold
+    CollapseButton.Parent = Layers
+
+    local CollapseBackground = Instance.new("Frame")
+    CollapseBackground.Name = "CollapseBackground"
+    CollapseBackground.Size = UDim2.new(1, 0, 1, 0)
+    CollapseBackground.Position = UDim2.new(0, 0, 0, 0)
+    CollapseBackground.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    CollapseBackground.BackgroundTransparency = 1
+    CollapseBackground.BorderSizePixel = 0
+    CollapseBackground.Parent = CollapseButton
+
+    local CollapseCorner1 = Instance.new("UICorner")
+    CollapseCorner1.CornerRadius = UDim.new(0, 8)
+    CollapseCorner1.Parent = CollapseBackground
+
+    local CollapseCorner2 = Instance.new("UICorner")
+    CollapseCorner2.CornerRadius = UDim.new(0, 8)
+    CollapseCorner2.Parent = CollapseButton
+
+    local CollapseStroke = Instance.new("UIStroke")
+    CollapseStroke.Thickness = 1
+    CollapseStroke.Transparency = 0.75
+    CollapseStroke.Color = Color3.fromRGB(255, 255, 255)
+    CollapseStroke.Parent = CollapseBackground
+
+    local CollapseGradient = Instance.new("UIGradient")
+    CollapseGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
+    })
+    CollapseGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.5, 1),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    CollapseGradient.Rotation = 30
+    CollapseGradient.Parent = CollapseStroke
+
     local SearchBarFrame = Instance.new("Frame")
     SearchBarFrame.Name = "SearchBarFrame"
-    SearchBarFrame.Size = UDim2.new(1, 0, 0, 26)
-    SearchBarFrame.Position = UDim2.new(0, 0, 0, 0)
+    SearchBarFrame.Size = UDim2.new(1, -25, 0, 29)
+    SearchBarFrame.Position = UDim2.new(0, 25, 0, 0)
     SearchBarFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     SearchBarFrame.BackgroundTransparency = 0.93
-    SearchBarFrame.Parent = LayersTab
+    SearchBarFrame.Parent = Layers
 
     local SearchBarCorner = Instance.new("UICorner")
-    SearchBarCorner.CornerRadius = UDim.new(0, 6)
+    SearchBarCorner.CornerRadius = UDim.new(0, 10)
     SearchBarCorner.Parent = SearchBarFrame
 
     local SearchBarStroke = Instance.new("UIStroke")
     SearchBarStroke.Thickness = 1
-    SearchBarStroke.Transparency = 0.85
+    SearchBarStroke.Transparency = 0.75
     SearchBarStroke.Color = Color3.fromRGB(255, 255, 255)
     SearchBarStroke.Parent = SearchBarFrame
 
     local SearchBarGradient = Instance.new("UIGradient")
     SearchBarGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
         ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
     })
     SearchBarGradient.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 0),
         NumberSequenceKeypoint.new(0.5, 1),
         NumberSequenceKeypoint.new(1, 0)
     })
-    SearchBarGradient.Rotation = 80
+    SearchBarGradient.Rotation = 85
     SearchBarGradient.Parent = SearchBarStroke
 
     local SearchBox = Instance.new("TextBox")
@@ -992,8 +1384,6 @@ function Napoleon:Window(GuiConfig)
     SearchIcon.Position = UDim2.new(0, 7, 0.5, 0)
     SearchIcon.Size = UDim2.new(0, 13, 0, 13)
     SearchIcon.Parent = SearchBarFrame
-
-
 
 	AccountTab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     AccountTab.BackgroundTransparency = 0.9350000023841858
@@ -1031,7 +1421,7 @@ function Napoleon:Window(GuiConfig)
     -- Nama player di sebelah kanan avatar
     local AccountName = Instance.new("TextLabel")
     AccountName.Font = Enum.Font.GothamBold
-    -- AccountName.Text = game:GetService("Players").LocalPlayer.Name
+    AccountName.Text = "Napoleon Free"
     AccountName.TextSize = 11
     AccountName.TextColor3 = Color3.fromRGB(231, 231, 231)
     AccountName.TextXAlignment = Enum.TextXAlignment.Left
@@ -1040,16 +1430,6 @@ function Napoleon:Window(GuiConfig)
     AccountName.Size = UDim2.new(1, -40, 1, 0)
     AccountName.TextTruncate = Enum.TextTruncate.AtEnd  -- potong kalau kepanjangan
     AccountName.Parent = AccountTab
-
-    local playerName = game:GetService("Players").LocalPlayer.Name
-
-    if #playerName > 3 then
-        local hiddenLength = #playerName - 3
-        local visible = string.sub(playerName, -3)
-        AccountName.Text = string.rep("*", hiddenLength) .. visible
-    else
-        AccountName.Text = playerName
-    end
 
     -- Ambil foto avatar
     local Players = game:GetService("Players")
@@ -1068,13 +1448,27 @@ function Napoleon:Window(GuiConfig)
 
     DecideFrame.AnchorPoint = Vector2.new(0.5, 0)
     DecideFrame.BackgroundColor3 = GuiConfig.Color
-    DecideFrame.BackgroundTransparency = 1
+    DecideFrame.BackgroundTransparency = 0.5
     DecideFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
     DecideFrame.BorderSizePixel = 0
     DecideFrame.Position = UDim2.new(0.5, 0, 0, 38)
     DecideFrame.Size = UDim2.new(1, 0, 0, 1)
     DecideFrame.Name = "DecideFrame"
     DecideFrame.Parent = Main
+
+    local DecideGradient = Instance.new("UIGradient")
+    DecideGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(160, 153, 241)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
+    })
+    DecideGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.5, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    DecideGradient.Rotation = 0
+    DecideGradient.Parent = DecideFrame
 
     Layers.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Layers.BackgroundTransparency = 0.9990000128746033
@@ -1093,13 +1487,13 @@ function Napoleon:Window(GuiConfig)
 	WindowImg1.BackgroundTransparency = 1
 	WindowImg1.ImageTransparency = 0.8
 	WindowImg1.BorderSizePixel = 0
-	WindowImg1.Size = UDim2.new(0.5, 0, 0.9, 0)
-	WindowImg1.Position = UDim2.new(0, 0, 0.1, 0)
+	WindowImg1.Size = UDim2.new(1, 0, 1, 0)
+	WindowImg1.Position = UDim2.new(0, 0, 0, 0)
 	WindowImg1.ScaleType = Enum.ScaleType.Fit
 	WindowImg1.Name = "WindowImg1"
 	WindowImg1.ZIndex = -1
-	WindowImg1.Parent = Layers
-    WindowImg1.Visible = false
+	WindowImg1.Parent = Main
+    WindowImg1.Visible = true
 
 	local WindowImg2 = Instance.new("ImageLabel")
 	WindowImg2.Image = "rbxassetid://" .. GuiConfig.WindowIMG
@@ -1135,7 +1529,7 @@ function Napoleon:Window(GuiConfig)
     LayersReal.BorderSizePixel = 0
     LayersReal.ClipsDescendants = true
     LayersReal.Position = UDim2.new(0, 0, 1, 0)
-    LayersReal.Size = UDim2.new(1, 0, 1, 0)
+    LayersReal.Size = UDim2.new(1, 0, 1, -33)
     LayersReal.Name = "LayersReal"
     LayersReal.Parent = Layers
 
@@ -1160,8 +1554,8 @@ function Napoleon:Window(GuiConfig)
     ScrollTab.BackgroundTransparency = 0.9990000128746033
     ScrollTab.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ScrollTab.BorderSizePixel = 0
-    ScrollTab.Size = UDim2.new(1, 0, 0.88, 0)
-	ScrollTab.Position = UDim2.new(0, 0, 0.11, 0)
+    ScrollTab.Size = UDim2.new(1, 0, 1, 0)
+	ScrollTab.Position = UDim2.new(0, 0, 0, 0)
     ScrollTab.Name = "ScrollTab"
     ScrollTab.Parent = LayersTab
 
@@ -1180,6 +1574,55 @@ function Napoleon:Window(GuiConfig)
     end
     ScrollTab.ChildAdded:Connect(UpdateSize1)
     ScrollTab.ChildRemoved:Connect(UpdateSize1)
+
+    CollapseButton.Activated:Connect(function()
+        CircleClick(CollapseButton, Mouse.X, Mouse.Y)
+        isCollapsed = not isCollapsed
+
+        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+
+        if isCollapsed then
+            TweenService:Create(LayersTab, tweenInfo, { Size = UDim2.new(0, 35, 1, -95) }):Play()
+            TweenService:Create(Layers, tweenInfo, {
+                Size = UDim2.new(1, -64.5, 1, -59),
+                Position = UDim2.new(0, 55, 0, 50)
+            }):Play()
+            TweenService:Create(AccountTab, tweenInfo, { Size = UDim2.new(0, 30, 0, 35) }):Play()
+            TweenService:Create(AvatarCircle, tweenInfo, { Position = UDim2.new(0, 2.5, 0.5, -13) }):Play()
+            AccountName.Visible = false
+            for _, desc in ipairs(AccountTab:GetDescendants()) do
+                if desc:IsA("TextLabel") then
+                    desc.Visible = false
+                end
+            end
+            CollapseButton.Text = "›"
+            for _, desc in ipairs(ScrollTab:GetDescendants()) do
+                if desc:IsA("TextLabel") and desc.Name == "TabName" then
+                    desc.Visible = false
+                end
+            end
+        else
+            TweenService:Create(LayersTab, tweenInfo, { Size = UDim2.new(0, GuiConfig["Tab Width"], 1, -95) }):Play()
+            TweenService:Create(Layers, tweenInfo, {
+                Size = UDim2.new(1, -(GuiConfig["Tab Width"] + 9 + 18), 1, -59),
+                Position = UDim2.new(0, GuiConfig["Tab Width"] + 18, 0, 50)
+            }):Play()
+            TweenService:Create(AccountTab, tweenInfo, { Size = UDim2.new(0, GuiConfig["Tab Width"], 0, 35) }):Play()
+            TweenService:Create(AvatarCircle, tweenInfo, { Position = UDim2.new(0, 5, 0.5, -13) }):Play()
+            AccountName.Visible = true
+            for _, desc in ipairs(AccountTab:GetDescendants()) do
+                if desc:IsA("TextLabel") then
+                    desc.Visible = true
+                end
+            end
+            CollapseButton.Text = "‹"
+            for _, desc in ipairs(ScrollTab:GetDescendants()) do
+                if desc:IsA("TextLabel") and desc.Name == "TabName" then
+                    desc.Visible = true
+                end
+            end
+        end
+    end)
 
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = string.lower(SearchBox.Text)
@@ -1239,6 +1682,7 @@ function Napoleon:Window(GuiConfig)
 
     Min.Activated:Connect(function()
         CircleClick(Min, Mouse.X, Mouse.Y)
+        HideTooltip()
         DropShadowHolder.Visible = false
     end)
     Close.Activated:Connect(function()
@@ -1281,9 +1725,9 @@ function Napoleon:Window(GuiConfig)
 
         local Gradient = Instance.new("UIGradient")
         Gradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255,255,255)),
+            ColorSequenceKeypoint.new(0.0, Color3.fromRGB(160, 153, 241)),
             ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40, 40, 40)),
-            ColorSequenceKeypoint.new(1.0, Color3.fromRGB(255,255,255))
+            ColorSequenceKeypoint.new(1.0, Color3.fromRGB(160, 153, 241))
         })
         Gradient.Rotation = 65
         Gradient.Parent = DialogGlow
@@ -1374,7 +1818,7 @@ function Napoleon:Window(GuiConfig)
         MainButton.Size = UDim2.new(0, 40, 0, 40)
         MainButton.Position = UDim2.new(0, 20, 0, 150)
         MainButton.BackgroundTransparency = 1
-        MainButton.Image = "rbxassetid://90610669808642" --.. GuiConfig.Image
+        MainButton.Image = "rbxassetid://119958938217417" --.. GuiConfig.Image
         MainButton.ScaleType = Enum.ScaleType.Fit
 
         local ToggleUIStroke = Instance.new("UIStroke")
@@ -1582,6 +2026,9 @@ function Napoleon:Window(GuiConfig)
         ScrolLayers.Size = UDim2.new(1, 0, 1, 0)
         ScrolLayers.Name = "ScrolLayers"
         ScrolLayers.Parent = LayersFolder
+        ScrolLayers:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+            HideTooltip()
+        end)
 
         UIListLayout1.Padding = UDim.new(0, 3)
         UIListLayout1.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1626,8 +2073,8 @@ function Napoleon:Window(GuiConfig)
 
         TabName.Font = Enum.Font.GothamBold
         TabName.Text = tostring(TabConfig.Name)
-        TabName.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabName.TextSize = 13
+        TabName.TextColor3 = CountTab == 0 and Color3.fromRGB(160, 153, 241) or Color3.fromRGB(255, 255, 255)
+        TabName.TextSize = 12
         TabName.TextXAlignment = Enum.TextXAlignment.Left
         TabName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabName.BackgroundTransparency = 0.9990000128746033
@@ -1641,6 +2088,7 @@ function Napoleon:Window(GuiConfig)
             TabIcon.AnchorPoint = Vector2.new(0, 0.5)
             TabIcon.Size = UDim2.new(0, 14, 0, 14)
             TabIcon.Image = Icons[TabConfig.Icon] or "rbxassetid://" .. tostring(TabConfig.Icon)
+            TabIcon.ImageColor3 = CountTab == 0 and Color3.fromRGB(160, 153, 241) or Color3.fromRGB(255, 255, 255)
             TabIcon.Parent = Tab
             
             TabName.Size = UDim2.new(1, -30, 1, 0)
@@ -1651,6 +2099,9 @@ function Napoleon:Window(GuiConfig)
         end
         TabName.Name = "TabName"
         TabName.Parent = Tab
+        if isCollapsed then
+            TabName.Visible = false
+        end
 
         if CountTab == 0 then
             LayersPageLayout:JumpToIndex(0)
@@ -1674,9 +2125,9 @@ function Napoleon:Window(GuiConfig)
 
         local StrokeGradient = Instance.new("UIGradient")
         StrokeGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
             ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
         })
         StrokeGradient.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 0),
@@ -1718,6 +2169,22 @@ function Napoleon:Window(GuiConfig)
                                 ):Play()
                             end
                         end
+                        local otherTabName = TabFrame:FindFirstChild("TabName")
+                        if otherTabName then
+                            TweenService:Create(
+                                otherTabName,
+                                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                                { TextColor3 = Color3.fromRGB(255, 255, 255) }
+                            ):Play()
+                        end
+                        local otherTabIcon = TabFrame:FindFirstChild("TabIcon")
+                        if otherTabIcon then
+                            TweenService:Create(
+                                otherTabIcon,
+                                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                                { ImageColor3 = Color3.fromRGB(255, 255, 255) }
+                            ):Play()
+                        end
                     end
                 end
                 TweenService:Create(
@@ -1736,6 +2203,23 @@ function Napoleon:Window(GuiConfig)
                         ):Play()
                     end
                 end
+                local thisTabName = Tab:FindFirstChild("TabName")
+                if thisTabName then
+                    TweenService:Create(
+                        thisTabName,
+                        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                        { TextColor3 = Color3.fromRGB(160, 153, 241) }
+                    ):Play()
+                end
+                local thisTabIcon = Tab:FindFirstChild("TabIcon")
+                if thisTabIcon then
+                    TweenService:Create(
+                        thisTabIcon,
+                        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                        { ImageColor3 = Color3.fromRGB(160, 153, 241) }
+                    ):Play()
+                end
+                HideTooltip()
                 LayersPageLayout:JumpToIndex(Tab.LayoutOrder)
                 task.wait(0.05)
                 NameTab.Text = TabConfig.Name
@@ -2003,7 +2487,6 @@ function Napoleon:Window(GuiConfig)
                 ParagraphTitle.Parent = Paragraph
 
                 ParagraphContent.Font = Enum.Font.Gotham
-                ParagraphContent.Text = ParagraphConfig.Content
                 ParagraphContent.TextColor3 = Color3.fromRGB(255, 255, 255)
                 ParagraphContent.TextSize = 12
                 ParagraphContent.TextXAlignment = Enum.TextXAlignment.Left
@@ -2014,6 +2497,12 @@ function Napoleon:Window(GuiConfig)
                 ParagraphContent.TextWrapped = false
                 ParagraphContent.RichText = true
                 ParagraphContent.Parent = Paragraph
+
+                if ParagraphConfig.MaxText and #ParagraphConfig.Content > ParagraphConfig.MaxText then
+                    SetupContentWithTooltip(ParagraphContent, ParagraphConfig.Content, ParagraphConfig.MaxText)
+                else
+                    ParagraphContent.Text = ParagraphConfig.Content
+                end
 
                 ParagraphContent.Size = UDim2.new(1, -16, 0, ParagraphContent.TextBounds.Y)
 
@@ -2122,7 +2611,6 @@ function Napoleon:Window(GuiConfig)
 
                 local Content = Instance.new("TextLabel")
                 Content.Font = Enum.Font.Gotham
-                Content.Text = PanelConfig.Content
                 Content.TextSize = 12
                 Content.TextColor3 = Color3.fromRGB(255, 255, 255)
                 Content.TextTransparency = 0
@@ -2132,6 +2620,12 @@ function Napoleon:Window(GuiConfig)
                 Content.Position = UDim2.new(0, 10, 0, 28)
                 Content.Size = UDim2.new(1, -20, 0, 14)
                 Content.Parent = Panel
+
+                if PanelConfig.Content ~= "" then
+                    SetupContentWithTooltip(Content, PanelConfig.Content, PanelConfig.MaxText)
+                else
+                    Content.Visible = false
+                end
 
                 local InputBox
                 if PanelConfig.Placeholder then
@@ -2268,7 +2762,6 @@ function Napoleon:Window(GuiConfig)
 
                 local ButtonContent = Instance.new("TextLabel")
                 ButtonContent.Font = Enum.Font.GothamBold
-                ButtonContent.Text = ButtonConfig.Content
                 ButtonContent.TextColor3 = Color3.fromRGB(255, 255, 255)
                 ButtonContent.TextSize = 12
                 ButtonContent.TextTransparency = 0.5
@@ -2284,7 +2777,8 @@ function Napoleon:Window(GuiConfig)
                     ButtonTitle.Size = UDim2.new(1, -100, 0, 13)
                     ButtonTitle.TextSize = 13
                     ButtonContent.Position = UDim2.new(0, 10, 0, 23)
-                    ButtonContent.Visible = true
+                    ButtonContent.TextWrapped = false
+                    SetupContentWithTooltip(ButtonContent, ButtonConfig.Content, ButtonConfig.MaxText, ButtonConfig.Callback)
                 else
                     ButtonTitle.Position = UDim2.new(0, 10, 0, 15)
                     ButtonTitle.Size = UDim2.new(1, -100, 0, 14)
@@ -2308,7 +2802,7 @@ function Napoleon:Window(GuiConfig)
                 ButtonIcon.ScaleType = Enum.ScaleType.Fit -- Agar gambar tidak gepeng
                 
                 local mainNormalSize = ButtonConfig.SubTitle
-                    and UDim2.new(0.5, -4, 1, 0)
+                    and UDim2.new(0.5, -2, 1, 0)
                     or  UDim2.new(1, 0, 1, 0)
                 local mainShrinkSize = UDim2.new(
                     mainNormalSize.X.Scale,
@@ -2365,7 +2859,7 @@ function Napoleon:Window(GuiConfig)
                     SubButtonIcon.ImageTransparency = 0.3
                     SubButtonIcon.ScaleType = Enum.ScaleType.Fit
 
-                    local subNormalSize = UDim2.new(0.5, -4, 1, 0)
+                    local subNormalSize = UDim2.new(0.5, -1.5, 1, 0)
                     local subShrinkSize = UDim2.new(
                         subNormalSize.X.Scale,
                         subNormalSize.X.Offset - 2,
@@ -2374,7 +2868,7 @@ function Napoleon:Window(GuiConfig)
                     )
 
                     SubButton.Size     = subNormalSize
-                    SubButton.Position = UDim2.new(0.5, 4, 0, 0)
+                    SubButton.Position = UDim2.new(0.5, 1.5, 0, 0)
                     SubButton.AnchorPoint = Vector2.new(0, 0)
                     SubButton.Parent = Button
 
@@ -2473,7 +2967,6 @@ function Napoleon:Window(GuiConfig)
                 ToggleTitle2.Parent = Toggle
 
                 ToggleContent.Font = Enum.Font.GothamBold
-                ToggleContent.Text = ToggleConfig.Content
                 ToggleContent.TextColor3 = Color3.fromRGB(255, 255, 255)
                 ToggleContent.TextSize = 12
                 ToggleContent.TextTransparency = 0.6
@@ -2502,26 +2995,10 @@ function Napoleon:Window(GuiConfig)
                     ToggleTitle2.Visible = false
                 end
 
-                ToggleContent.Size = UDim2.new(1, -100, 0,
-                    12 + (12 * (ToggleContent.TextBounds.X // ToggleContent.AbsoluteSize.X)))
-                ToggleContent.TextWrapped = true
-                if ToggleConfig.Title2 ~= "" then
-                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 47)
-                else
-                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 33)
-                end
-
-                ToggleContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                    ToggleContent.TextWrapped = false
-                    ToggleContent.Size = UDim2.new(1, -100, 0,
-                        12 + (12 * (ToggleContent.TextBounds.X // ToggleContent.AbsoluteSize.X)))
-                    if ToggleConfig.Title2 ~= "" then
-                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 47)
-                    else
-                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 33)
-                    end
-                    ToggleContent.TextWrapped = true
-                    UpdateSizeSection()
+                ToggleContent.TextWrapped = false
+                SetupContentWithTooltip(ToggleContent, ToggleConfig.Content, ToggleConfig.MaxText, function()
+                    ToggleFunc.Value = not ToggleFunc.Value
+                    ToggleFunc:Set(ToggleFunc.Value)
                 end)
 
                 ToggleButton.Font = Enum.Font.SourceSans
@@ -2535,16 +3012,17 @@ function Napoleon:Window(GuiConfig)
                 FeatureFrame2.BackgroundTransparency = 0.92
                 FeatureFrame2.BorderSizePixel = 0
                 FeatureFrame2.Position = UDim2.new(1, -15, 0.5, 0)
-                FeatureFrame2.Size = UDim2.new(0, 30, 0, 15)
+                FeatureFrame2.Size = UDim2.new(0, 35, 0, 20)
                 FeatureFrame2.Name = "FeatureFrame"
                 FeatureFrame2.Parent = Toggle
 
+                UICorner22.CornerRadius = UDim.new(1, 0)
                 UICorner22.Parent = FeatureFrame2
 
-                UIStroke8.Color = Color3.fromRGB(255, 255, 255)
-                UIStroke8.Thickness = 2
-                UIStroke8.Transparency = 0.9
-                UIStroke8.Parent = FeatureFrame2
+                -- UIStroke8.Color = Color3.fromRGB(255, 255, 255)
+                -- UIStroke8.Thickness = 2
+                -- UIStroke8.Transparency = 0.9
+                -- UIStroke8.Parent = FeatureFrame2
 
                 ToggleCircle.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
                 ToggleCircle.BorderSizePixel = 0
@@ -2688,16 +3166,16 @@ function Napoleon:Window(GuiConfig)
                     SaveConfig()
                     if Value then
                         TweenService:Create(ToggleTitle, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 15, 0, 0), BackgroundColor3 = Color3.fromRGB(230, 230, 230) })
+                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 18, 0, 3), BackgroundColor3 = Color3.fromRGB(230, 230, 230) })
                             :Play()
                         TweenService:Create(UIStroke8, TweenInfo.new(0.2), { Color = Color3.fromRGB(0, 190, 0), Transparency = 0 })
                             :Play()
                         TweenService:Create(FeatureFrame2, TweenInfo.new(0.2),
-                            { BackgroundColor3 = Color3.fromRGB(0, 190, 0), BackgroundTransparency = 0 }):Play()
+                            { BackgroundColor3 = Color3.fromRGB(160, 153, 241), BackgroundTransparency = 0 }):Play()
                     else
                         TweenService:Create(ToggleTitle, TweenInfo.new(0.2),
                             { TextColor3 = Color3.fromRGB(230, 230, 230) }):Play()
-                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 0, 0, 0), BackgroundColor3 = Color3.fromRGB(230, 230, 230) }):Play()
+                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 3, 0, 3), BackgroundColor3 = Color3.fromRGB(230, 230, 230) }):Play()
                         TweenService:Create(UIStroke8, TweenInfo.new(0.2),
                             { Color = Color3.fromRGB(255, 255, 255), Transparency = 0.9 }):Play()
                         TweenService:Create(FeatureFrame2, TweenInfo.new(0.2),
@@ -2754,7 +3232,7 @@ function Napoleon:Window(GuiConfig)
                 Slider.Name = "Slider"
                 Slider.Parent = SectionAdd
 
-                UICorner15.CornerRadius = UDim.new(0, 13)
+                UICorner15.CornerRadius = UDim.new(0, 4)
                 UICorner15.Parent = Slider
 
                 SliderTitle.Font = Enum.Font.GothamBold
@@ -2773,34 +3251,31 @@ function Napoleon:Window(GuiConfig)
                 SliderTitle.Parent = Slider
 
                 SliderContent.Font = Enum.Font.GothamBold
-                SliderContent.Text = SliderConfig.Content
                 SliderContent.TextColor3 = Color3.fromRGB(255, 255, 255)
                 SliderContent.TextSize = 12
-                SliderContent.TextTransparency = 0.6000000238418579
+                SliderContent.TextTransparency = 0.6
                 SliderContent.TextXAlignment = Enum.TextXAlignment.Left
                 SliderContent.TextYAlignment = Enum.TextYAlignment.Bottom
-                SliderContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                SliderContent.BackgroundTransparency = 0.9990000128746033
-                SliderContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
+                SliderContent.BackgroundTransparency = 1
                 SliderContent.BorderSizePixel = 0
-                SliderContent.Position = UDim2.new(0, 10, 0, 25)
+                SliderContent.Position = UDim2.new(0, 10, 0, 23)
                 SliderContent.Size = UDim2.new(1, -180, 0, 12)
                 SliderContent.Name = "SliderContent"
                 SliderContent.Parent = Slider
 
-                SliderContent.Size = UDim2.new(1, -180, 0,
-                    12 + (12 * (SliderContent.TextBounds.X // SliderContent.AbsoluteSize.X)))
-                SliderContent.TextWrapped = true
-                Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 33)
-
-                SliderContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                Slider.Size = UDim2.new(1, 0, 0, 46)
+                if SliderConfig.Content ~= "" then
+                    SliderTitle.Position = UDim2.new(0, 10, 0, 10)
+                    SliderTitle.TextSize = 13
+                    SliderContent.Position = UDim2.new(0, 10, 0, 23)
+                    SliderContent.Size = UDim2.new(1, -180, 0, 12)
                     SliderContent.TextWrapped = false
-                    SliderContent.Size = UDim2.new(1, -180, 0,
-                        12 + (12 * (SliderContent.TextBounds.X // SliderContent.AbsoluteSize.X)))
-                    Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 33)
-                    SliderContent.TextWrapped = true
-                    UpdateSizeSection()
-                end)
+                    SetupContentWithTooltip(SliderContent, SliderConfig.Content, SliderConfig.MaxText)
+                else
+                    SliderTitle.Position = UDim2.new(0, 10, 0, 15)
+                    SliderTitle.TextSize = 14
+                    SliderContent.Visible = false
+                end
 
                 SliderInput.AnchorPoint = Vector2.new(0, 0.5)
                 SliderInput.BackgroundColor3 = GuiConfig.Color
@@ -2993,51 +3468,32 @@ function Napoleon:Window(GuiConfig)
                 InputTitle.Parent = Input
 
                 InputContent.Font = Enum.Font.GothamBold
-                InputContent.Text = InputConfig.Content or "This is a TextBox"
                 InputContent.TextColor3 = Color3.fromRGB(255, 255, 255)
                 InputContent.TextSize = 12
-                InputContent.TextTransparency = 0.6000000238418579
-                InputContent.TextWrapped = true
+                InputContent.TextTransparency = 0.6
+                InputContent.TextWrapped = false
                 InputContent.TextXAlignment = Enum.TextXAlignment.Left
                 InputContent.TextYAlignment = Enum.TextYAlignment.Bottom
-                InputContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                InputContent.BackgroundTransparency = 0.9990000128746033
-                InputContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
+                InputContent.BackgroundTransparency = 1
                 InputContent.BorderSizePixel = 0
-                InputContent.Position = UDim2.new(0, 10, 0, 25)
-                InputContent.Size = UDim2.new(1, -20, 0, 12)
+                InputContent.Position = UDim2.new(0, 10, 0, 23)
+                InputContent.Size = UDim2.new(1, -160, 0, 12)
                 InputContent.Name = "InputContent"
                 InputContent.Parent = Input
 
+                Input.Size = UDim2.new(1, 0, 0, 46)
                 if InputConfig.Content ~= "" then
                     InputTitle.Position = UDim2.new(0, 10, 0, 10)
                     InputTitle.TextSize = 13
+                    InputContent.Position = UDim2.new(0, 10, 0, 23)
+                    InputContent.Size = UDim2.new(1, -160, 0, 12)
+                    InputContent.TextWrapped = false
+                    SetupContentWithTooltip(InputContent, InputConfig.Content, InputConfig.MaxText)
                 else
                     InputTitle.Position = UDim2.new(0, 10, 0, 15)
                     InputTitle.TextSize = 14
-                end
-
-                if InputConfig.Content == "" then
                     InputContent.Visible = false
-                    InputContent.Size = UDim2.new(1, -160, 0, 0)
-                    Input.Size = UDim2.new(1, 0, 0, 46)
-                else
-                    InputContent.Size = UDim2.new(1, -160, 0,
-                        12 + (12 * (InputContent.TextBounds.X // math.max(1, InputContent.AbsoluteSize.X))))
-                    InputContent.TextWrapped = true
-                    Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
                 end
-
-                InputContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                    if InputConfig.Content ~= "" then
-                        InputContent.TextWrapped = false
-                        InputContent.Size = UDim2.new(1, -160, 0,
-                            12 + (12 * (InputContent.TextBounds.X // math.max(1, InputContent.AbsoluteSize.X))))
-                        Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
-                        InputContent.TextWrapped = true
-                        UpdateSizeSection()
-                    end
-                end)
 
                 InputFrame.AnchorPoint = Vector2.new(1, 0.5)
                 InputFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -3061,9 +3517,9 @@ function Napoleon:Window(GuiConfig)
 
                 local InputGradient = Instance.new("UIGradient")
                 InputGradient.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
                     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
                 })
                 InputGradient.Transparency = NumberSequence.new({
                     NumberSequenceKeypoint.new(0, 0),
@@ -3167,33 +3623,29 @@ function Napoleon:Window(GuiConfig)
                 DropdownTitle.Parent = Dropdown
 
                 DropdownContent.Font = Enum.Font.GothamBold
-                DropdownContent.Text = DropdownConfig.Content
                 DropdownContent.TextColor3 = Color3.fromRGB(255, 255, 255)
                 DropdownContent.TextSize = 12
                 DropdownContent.TextTransparency = 0.6
-                DropdownContent.TextWrapped = true
+                DropdownContent.TextWrapped = false
                 DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
                 DropdownContent.BackgroundTransparency = 1
-                DropdownContent.Position = UDim2.new(0, 10, 0, 25)
+                DropdownContent.Position = UDim2.new(0, 10, 0, 23)
                 DropdownContent.Size = UDim2.new(1, -180, 0, 12)
                 DropdownContent.Name = "DropdownContent"
                 DropdownContent.Parent = Dropdown
 
+                Dropdown.Size = UDim2.new(1, 0, 0, 46)
                 if DropdownConfig.Content ~= "" then
                     DropdownTitle.Position = UDim2.new(0, 10, 0, 10)
                     DropdownTitle.TextSize = 13
+                    DropdownContent.Position = UDim2.new(0, 10, 0, 23)
+                    DropdownContent.Size = UDim2.new(1, -180, 0, 12)
+                    DropdownContent.TextWrapped = false
+                    SetupContentWithTooltip(DropdownContent, DropdownConfig.Content, DropdownConfig.MaxText)
                 else
                     DropdownTitle.Position = UDim2.new(0, 10, 0, 15)
                     DropdownTitle.TextSize = 14
-                end
-
-                if DropdownConfig.Content == "" then
                     DropdownContent.Visible = false
-                else
-                    DropdownContent.Size = UDim2.new(1, -180, 0,
-                        12 + (12 * (DropdownContent.TextBounds.X // math.max(1, DropdownContent.AbsoluteSize.X))))
-                    DropdownContent.TextWrapped = true
-                    Dropdown.Size = UDim2.new(1, 0, 0, DropdownContent.AbsoluteSize.Y + 33)
                 end
 
                 SelectOptionsFrame.AnchorPoint = Vector2.new(1, 0.5)
@@ -3398,9 +3850,9 @@ function Napoleon:Window(GuiConfig)
 
                     local OptionGradient = Instance.new("UIGradient")
                     OptionGradient.Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 153, 241)),
                         ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 153, 241))
                     })
                     OptionGradient.Transparency = NumberSequence.new({
                         NumberSequenceKeypoint.new(0, 0),
@@ -3925,14 +4377,13 @@ end
 
 -- local Window = Napoleon:Window({
 --     Title    = "Napoleon",
---     Footer   = "Version 1.0",
---     Content  = "Car Driving Indonesia",
---     Color    = Color3.fromRGB(128, 128, 128),
---     Color2   = Color3.fromRGB(14, 14, 14),
---     ["Tab Width"] = 160,
+--     Footer   = "Steal An Egg",
+--     Color    = Color3.fromRGB(160, 153, 241),
+--     Color2   = Color3.fromRGB(16, 15, 24),
+--     ["Tab Width"] = 130,
 --     Image      = "76157300179532",
 --     WindowIMG  = "91334002283698",
---     LogoHUB    = "90610669808642"
+--     LogoHUB    = "90323876537767"
 -- })
 -- local Tabs = Window
 
@@ -4052,8 +4503,8 @@ end
 --     -- DemoSection:AddSubSection("Inputs & Dropdowns")
 
 --     DemoSection:AddInput({
---         Title    = "Example Input",
---         Content  = "Type something and press enter",
+--         Title    = "Lorem ipsum",
+--         Content  = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
 --         Default  = "",
 --         Callback = function(val)
 --             notif("Input submitted: " .. tostring(val), 2)

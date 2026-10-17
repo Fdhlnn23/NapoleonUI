@@ -140,12 +140,12 @@ end
 
 local Icons = {
     player    = "rbxassetid://135004817032081",
-    web       = "rbxassetid://137601480983962",
+    web       = "rbxassetid://80650466678263",
     bag       = "rbxassetid://8601111810",
     shop      = "rbxassetid://4985385964",
     cart      = "rbxassetid://128874923961846",
     plug      = "rbxassetid://137601480983962",
-    settings  = "rbxassetid://70386228443175",
+    settings  = "rbxassetid://83564436871759",
     loop      = "rbxassetid://122032243989747",
     gps       = "rbxassetid://17824309485",
     compas    = "rbxassetid://125300760963399",
@@ -176,7 +176,10 @@ local Icons = {
     nplnnewerav1icon = "rbxassetid://90610669808642",
     truck = "rbxassetid://100416780768944",
     maps = "rbxassetid://82331242881427",
-    signal = "rbxassetid://10734961133"
+    signal = "rbxassetid://10734961133",
+	auto = "rbxassetid://137556925719843",
+	egg = "rbxassetid://115652629686453",
+	file = "rbxassetid://132851730601586"
 }
 
 local UserInputService = game:GetService("UserInputService")

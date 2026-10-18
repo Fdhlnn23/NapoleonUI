@@ -3011,8 +3011,12 @@ function Napoleon:Window(GuiConfig)
                 ToggleButton.Name = "ToggleButton"
                 ToggleButton.Parent = Toggle
 
+                local isDefaultActive = not not ToggleConfig.Default
+                local activeColor = GuiConfig.Color or Color3.fromRGB(160, 153, 241)
+
                 FeatureFrame2.AnchorPoint = Vector2.new(1, 0.5)
-                FeatureFrame2.BackgroundTransparency = 0.92
+                FeatureFrame2.BackgroundColor3 = isDefaultActive and activeColor or Color3.fromRGB(255, 255, 255)
+                FeatureFrame2.BackgroundTransparency = isDefaultActive and 0 or 0.92
                 FeatureFrame2.BorderSizePixel = 0
                 FeatureFrame2.Position = UDim2.new(1, -15, 0.5, 0)
                 FeatureFrame2.Size = UDim2.new(0, 35, 0, 20)
@@ -3022,13 +3026,9 @@ function Napoleon:Window(GuiConfig)
                 UICorner22.CornerRadius = UDim.new(1, 0)
                 UICorner22.Parent = FeatureFrame2
 
-                -- UIStroke8.Color = Color3.fromRGB(255, 255, 255)
-                -- UIStroke8.Thickness = 2
-                -- UIStroke8.Transparency = 0.9
-                -- UIStroke8.Parent = FeatureFrame2
-
                 ToggleCircle.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
                 ToggleCircle.BorderSizePixel = 0
+                ToggleCircle.Position = isDefaultActive and UDim2.new(0, 18, 0, 3) or UDim2.new(0, 3, 0, 3)
                 ToggleCircle.Size = UDim2.new(0, 14, 0, 14)
                 ToggleCircle.Name = "ToggleCircle"
                 ToggleCircle.Parent = FeatureFrame2
@@ -3159,30 +3159,24 @@ function Napoleon:Window(GuiConfig)
                 end)
 
                 function ToggleFunc:Set(Value)
+                    ToggleFunc.Value = Value
+                    ConfigData[configKey] = Value
+                    SaveConfig()
                     if typeof(ToggleConfig.Callback) == "function" then
                         local ok, err = pcall(function()
                             ToggleConfig.Callback(Value)
                         end)
                         if not ok then warn("Toggle Callback error:", err) end
                     end
-                    ConfigData[configKey] = Value
-                    SaveConfig()
+                    local themeColor = GuiConfig.Color or Color3.fromRGB(160, 153, 241)
                     if Value then
                         TweenService:Create(ToggleTitle, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 18, 0, 3), BackgroundColor3 = Color3.fromRGB(230, 230, 230) })
-                            :Play()
-                        TweenService:Create(UIStroke8, TweenInfo.new(0.2), { Color = Color3.fromRGB(0, 190, 0), Transparency = 0 })
-                            :Play()
-                        TweenService:Create(FeatureFrame2, TweenInfo.new(0.2),
-                            { BackgroundColor3 = Color3.fromRGB(160, 153, 241), BackgroundTransparency = 0 }):Play()
+                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 18, 0, 3), BackgroundColor3 = Color3.fromRGB(230, 230, 230) }):Play()
+                        TweenService:Create(FeatureFrame2, TweenInfo.new(0.2), { BackgroundColor3 = themeColor, BackgroundTransparency = 0 }):Play()
                     else
-                        TweenService:Create(ToggleTitle, TweenInfo.new(0.2),
-                            { TextColor3 = Color3.fromRGB(230, 230, 230) }):Play()
+                        TweenService:Create(ToggleTitle, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(230, 230, 230) }):Play()
                         TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 3, 0, 3), BackgroundColor3 = Color3.fromRGB(230, 230, 230) }):Play()
-                        TweenService:Create(UIStroke8, TweenInfo.new(0.2),
-                            { Color = Color3.fromRGB(255, 255, 255), Transparency = 0.9 }):Play()
-                        TweenService:Create(FeatureFrame2, TweenInfo.new(0.2),
-                            { BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92 }):Play()
+                        TweenService:Create(FeatureFrame2, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92 }):Play()
                     end
                 end
 
